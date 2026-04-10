@@ -361,8 +361,18 @@ class IngredientDetailCubit extends Cubit<IngredientDetailState> {
 
   /// Tăng số lượng
   void increaseQuantity() {
-    emit(state.copyWith(quantity: state.quantity + 1));
-    print('➕ Số lượng: ${state.quantity}');
+    final maxQuantity = state.selectedSeller?.soLuongBan ?? 999;
+    if (state.quantity < maxQuantity) {
+      emit(state.copyWith(quantity: state.quantity + 1));
+      print('➕ Số lượng: ${state.quantity}');
+    } else {
+      emit(state.copyWith(
+        errorMessage: 'Chỉ còn $maxQuantity sản phẩm',
+      ));
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!isClosed) emit(state.copyWith(errorMessage: null));
+      });
+    }
   }
 
   /// Giảm số lượng (tối thiểu là 1)

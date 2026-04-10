@@ -17,6 +17,8 @@ class SellerInfo extends Equatable {
   final double rating;
   final int productCount;
   final int soldCount;
+  
+  String get categoriesDisplay => categories.join(', ');
 
   const SellerInfo({
     required this.id,

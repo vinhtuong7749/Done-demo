@@ -225,13 +225,18 @@ class CheckoutResponse {
     // 2. Nested format: { "order": { "ma_don_hang": "..." }, "totals": { ... } }
     // 3. Flat format: { "ma_don_hang": "...", ... }
     
+    // Thêm hỗ trợ format 'data' phổ biến
+    final data = json['data'] as List<dynamic>?;
     final orders = json['orders'] as List<dynamic>?;
     final order = json['order'] as Map<String, dynamic>?;
     final totals = json['totals'] as Map<String, dynamic>?;
     
-    // Lấy ma_don_hang từ orders[0] hoặc order hoặc totals hoặc root
+    // Lấy ma_don_hang từ data[0] hoặc orders[0] hoặc order hoặc totals hoặc root
     String maDonHang = '';
-    if (orders != null && orders.isNotEmpty) {
+    if (data != null && data.isNotEmpty) {
+      final firstOrder = data[0] as Map<String, dynamic>;
+      maDonHang = firstOrder['ma_don_hang'] ?? firstOrder['order_id'] ?? '';
+    } else if (orders != null && orders.isNotEmpty) {
       final firstOrder = orders[0] as Map<String, dynamic>;
       maDonHang = firstOrder['ma_don_hang'] ?? '';
     } else {
@@ -240,14 +245,23 @@ class CheckoutResponse {
                   json['ma_don_hang'] ?? '';
     }
     
-    // Lấy ma_thanh_toan từ root hoặc orders[0] hoặc order
+    // Lấy ma_thanh_toan từ root hoặc data[0] hoặc orders[0] hoặc order
     String maThanhToan = json['ma_thanh_toan'] ?? '';
+    if (maThanhToan.isEmpty && data != null && data.isNotEmpty) {
+      final firstOrder = data[0] as Map<String, dynamic>;
+      maThanhToan = firstOrder['ma_thanh_toan'] ?? '';
+    }
     if (maThanhToan.isEmpty && orders != null && orders.isNotEmpty) {
       final firstOrder = orders[0] as Map<String, dynamic>;
       maThanhToan = firstOrder['ma_thanh_toan'] ?? '';
     }
     if (maThanhToan.isEmpty) {
       maThanhToan = order?['ma_thanh_toan'] ?? '';
+    }
+    
+    // Đảm bảo maThanhToan không rỗng bằng cách fallback qua maDonHang nếu cần
+    if (maThanhToan.isEmpty) {
+      maThanhToan = maDonHang;
     }
     
     // Lấy tong_tien từ total_amount hoặc orders[0] hoặc order hoặc totals hoặc root

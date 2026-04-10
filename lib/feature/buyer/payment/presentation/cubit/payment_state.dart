@@ -19,25 +19,45 @@ class PaymentLoaded extends PaymentState {
   final OrderSummary orderSummary;
   final PaymentMethod selectedPaymentMethod;
   final String? orderCode; // Mã đơn hàng từ checkout
+  final List<MapSuggestion> addressSuggestions;
+  final bool isSearchingAddress;
+  final String timeSlotId;
 
   const PaymentLoaded({
     required this.orderSummary,
     required this.selectedPaymentMethod,
     this.orderCode,
+    this.addressSuggestions = const [],
+    this.isSearchingAddress = false,
+    this.timeSlotId = '1',
   });
 
   @override
-  List<Object?> get props => [orderSummary, selectedPaymentMethod, orderCode];
+  List<Object?> get props => [
+        orderSummary,
+        selectedPaymentMethod,
+        orderCode,
+        addressSuggestions,
+        isSearchingAddress,
+        timeSlotId,
+      ];
 
   PaymentLoaded copyWith({
     OrderSummary? orderSummary,
     PaymentMethod? selectedPaymentMethod,
     String? orderCode,
+    List<MapSuggestion>? addressSuggestions,
+    bool? isSearchingAddress,
+    String? timeSlotId,
   }) {
     return PaymentLoaded(
       orderSummary: orderSummary ?? this.orderSummary,
-      selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
+      selectedPaymentMethod:
+          selectedPaymentMethod ?? this.selectedPaymentMethod,
       orderCode: orderCode ?? this.orderCode,
+      addressSuggestions: addressSuggestions ?? this.addressSuggestions,
+      isSearchingAddress: isSearchingAddress ?? this.isSearchingAddress,
+      timeSlotId: timeSlotId ?? this.timeSlotId,
     );
   }
 }
@@ -91,7 +111,6 @@ enum PaymentMethod {
   vnpay,
 }
 
-/// Model cho OrderSummary
 class OrderSummary {
   final String customerName;
   final String phoneNumber;
@@ -100,6 +119,7 @@ class OrderSummary {
   final List<OrderItem> items;
   final double subtotal;
   final double total;
+  final String? notes;
 
   const OrderSummary({
     required this.customerName,
@@ -109,6 +129,7 @@ class OrderSummary {
     required this.items,
     required this.subtotal,
     required this.total,
+    this.notes,
   });
 
   factory OrderSummary.fromJson(Map<String, dynamic> json) {
@@ -117,6 +138,7 @@ class OrderSummary {
       phoneNumber: json['phoneNumber'] ?? '',
       deliveryAddress: json['deliveryAddress'] ?? '',
       estimatedDelivery: json['estimatedDelivery'] ?? '',
+      notes: json['notes'],
       items: (json['items'] as List?)
               ?.map((item) => OrderItem.fromJson(item))
               .toList() ??
@@ -132,10 +154,33 @@ class OrderSummary {
       'phoneNumber': phoneNumber,
       'deliveryAddress': deliveryAddress,
       'estimatedDelivery': estimatedDelivery,
+      'notes': notes,
       'items': items.map((item) => item.toJson()).toList(),
       'subtotal': subtotal,
       'total': total,
     };
+  }
+
+  OrderSummary copyWith({
+    String? customerName,
+    String? phoneNumber,
+    String? deliveryAddress,
+    String? estimatedDelivery,
+    List<OrderItem>? items,
+    double? subtotal,
+    double? total,
+    String? notes,
+  }) {
+    return OrderSummary(
+      customerName: customerName ?? this.customerName,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+      estimatedDelivery: estimatedDelivery ?? this.estimatedDelivery,
+      items: items ?? this.items,
+      subtotal: subtotal ?? this.subtotal,
+      total: total ?? this.total,
+      notes: notes ?? this.notes,
+    );
   }
 
   int get totalItemCount => items.length;

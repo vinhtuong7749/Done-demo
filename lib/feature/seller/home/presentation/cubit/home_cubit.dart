@@ -32,34 +32,45 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         final user = await _authService.getCurrentUser();
         shopName = user.tenNguoiDung.isNotEmpty ? user.tenNguoiDung : user.tenDangNhap;
 
+        // Thử lấy shop status từ local storage dựa trên user_id trước (fallback)
+        final savedUserStatus = _localStorageService.getShopStatus(user.maNguoiDung);
+        if (savedUserStatus != null) {
+          isStoreOpen = (savedUserStatus == 'mo_cua' || savedUserStatus == 'dang_mo_cua');
+          debugPrint('🏪 [HOME_CUBIT] Found saved status for USER: $savedUserStatus (isStoreOpen: $isStoreOpen)');
+        }
+
         // Lấy mã gian hàng từ sản phẩm đầu tiên để fetch chi tiết gian hàng
         final productsResponse = await NhomNguyenLieuService.getSellerProducts(limit: 1);
         if (productsResponse.data.isNotEmpty) {
           maGianHang = productsResponse.data[0]['ma_gian_hang'];
           if (maGianHang != null) {
-            // Kiểm tra trạng thái lưu local trước
+            // Kiểm tra trạng thái lưu local theo maGianHang
             final savedStatus = _localStorageService.getShopStatus(maGianHang!);
             if (savedStatus != null) {
               isStoreOpen = (savedStatus == 'mo_cua' || savedStatus == 'dang_mo_cua');
               debugPrint('🏪 [HOME_CUBIT] Found saved status in local (Init): $savedStatus (isStoreOpen: $isStoreOpen)');
             }
 
-            final shopDetail = await _shopService.getShopDetail(maGianHang!);
-            if (shopDetail.success) {
-              final apiStatus = shopDetail.detail.tinhTrang;
-              // Normalize status từ API
-              final apiIsStoreOpen = (apiStatus == 'mo_cua' || apiStatus == 'dang_mo_cua');
-              
-              // Cập nhật lại local storage để đồng bộ với server
-              await _localStorageService.saveShopStatus(maGianHang!, apiIsStoreOpen ? 'mo_cua' : 'dong_cua');
-              
-              isStoreOpen = apiIsStoreOpen;
-              debugPrint('🏪 [HOME_CUBIT] Initialized from API: $apiStatus (isStoreOpen: $isStoreOpen)');
+            try {
+              final shopDetail = await _shopService.getShopDetail(maGianHang!);
+              if (shopDetail.success) {
+                final apiStatus = shopDetail.detail.tinhTrang;
+                final apiIsStoreOpen = (apiStatus == 'mo_cua' || apiStatus == 'dang_mo_cua');
+                
+                // Đồng bộ lại local storage
+                await _localStorageService.saveShopStatus(maGianHang!, apiIsStoreOpen ? 'mo_cua' : 'dong_cua');
+                await _localStorageService.saveShopStatus(user.maNguoiDung, apiIsStoreOpen ? 'mo_cua' : 'dong_cua');
+                
+                isStoreOpen = apiIsStoreOpen;
+                debugPrint('🏪 [HOME_CUBIT] Initialized from API: $apiStatus (isStoreOpen: $isStoreOpen)');
+              }
+            } catch (e) {
+              debugPrint('⚠️ [HOME_CUBIT] API Shop Detail failed, keeping local/default status. Error: $e');
             }
           }
         }
       } catch (e) {
-        debugPrint('❌ [HOME_CUBIT] Error fetching shop status in Init: $e');
+        debugPrint('❌ [HOME_CUBIT] Error in shop initialization: $e');
       }
 
       // 2. Lấy danh sách đơn hàng để tính toán thống kê và đơn hàng mới
@@ -237,8 +248,13 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         // Lưu lại trạng thái vào local để persist qua logout
         if (state.maGianHang != null) {
           await _localStorageService.saveShopStatus(state.maGianHang!, newStatus);
-          debugPrint('🏪 [HOME_CUBIT] Saved new status to local: $newStatus');
         }
+        
+        try {
+          final user = await _authService.getCurrentUser();
+          await _localStorageService.saveShopStatus(user.maNguoiDung, newStatus);
+          debugPrint('🏪 [HOME_CUBIT] Saved new status to local for user: $newStatus');
+        } catch (_) {}
       } else {
         // Rollback nếu API trả về false
         emit(state.copyWith(

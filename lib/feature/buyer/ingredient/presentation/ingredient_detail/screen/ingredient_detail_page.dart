@@ -915,6 +915,7 @@ class _IngredientDetailView extends StatelessWidget {
     final isOutOfStock = state.selectedSeller != null && !state.selectedSeller!.conHang;
     final isClosed = state.selectedSeller != null && !state.selectedSeller!.isMoCua;
     final isDisabled = isOutOfStock || isClosed;
+    final isMaxQuantity = state.selectedSeller != null && state.quantity >= state.selectedSeller!.soLuongBan;
     final statusText = isClosed ? 'Đóng cửa' : 'Hết hàng';
 
     return Positioned(
@@ -1025,12 +1026,12 @@ class _IngredientDetailView extends StatelessWidget {
                     // Increase button
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: isDisabled ? null : () => context.read<IngredientDetailCubit>().increaseQuantity(),
+                      onTap: (isDisabled || isMaxQuantity) ? null : () => context.read<IngredientDetailCubit>().increaseQuantity(),
                       child: Container(
                         width: 32,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: isDisabled ? const Color(0xFFE0E0E0) : const Color(0xFFF5F5F5),
+                          color: (isDisabled || isMaxQuantity) ? const Color(0xFFE0E0E0) : const Color(0xFFF5F5F5),
                           borderRadius: const BorderRadius.only(
                             topRight: Radius.circular(4),
                             bottomRight: Radius.circular(4),
@@ -1039,7 +1040,7 @@ class _IngredientDetailView extends StatelessWidget {
                         child: Icon(
                           Icons.add,
                           size: 18,
-                          color: isDisabled ? const Color(0xFF999999) : const Color(0xFF00B40F),
+                          color: (isDisabled || isMaxQuantity) ? const Color(0xFF999999) : const Color(0xFF00B40F),
                         ),
                       ),
                     ),

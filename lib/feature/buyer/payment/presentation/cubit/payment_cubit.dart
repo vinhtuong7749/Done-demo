@@ -6,16 +6,14 @@ import '../../../../../core/config/app_config.dart';
 import '../../../../../core/services/vnpay_service.dart';
 import '../../../../../core/services/cart_api_service.dart';
 import '../../../../../core/services/user_profile_service.dart';
+import '../../../../../core/services/geocoding_service.dart';
+import 'dart:async';
 
 part 'payment_state.dart';
 
-/// Payment Cubit quản lý logic nghiệp vụ của thanh toán
-/// 
-/// Chức năng chính:
-/// - Tải thông tin đơn hàng
-/// - Chọn phương thức thanh toán
-/// - Xử lý thanh toán
 class PaymentCubit extends Cubit<PaymentState> {
+  final GeocodingService _geocodingService = GeocodingService();
+  Timer? _debounce;
   PaymentMethod _selectedPaymentMethod = PaymentMethod.cashOnDelivery;
   OrderSummary? _orderSummary;
   String? _maDonHang; // Mã đơn hàng từ API cart hoặc tạo mới
@@ -65,10 +63,17 @@ class PaymentCubit extends Cubit<PaymentState> {
         AppLogger.info('💰 [PAYMENT] Tổng tiền: ${_orderSummary!.total}đ');
       }
 
+      // Lưu mã đơn hàng nếu có (từ tham số truyền vào)
+      final newMaDonHang = orderData?['orderCode'] as String?;
+      if (newMaDonHang != null) {
+        _maDonHang = newMaDonHang;
+      }
+
       emit(PaymentLoaded(
         orderSummary: _orderSummary!,
         selectedPaymentMethod: _selectedPaymentMethod,
-        orderCode: orderData?['orderCode'] as String?,
+        orderCode: _maDonHang,
+        timeSlotId: 'KG10', // Default on load (11:00 - 11:30)
       ));
     } catch (e) {
       if (AppConfig.enableApiLogging) {
@@ -181,11 +186,115 @@ class PaymentCubit extends Cubit<PaymentState> {
     _selectedPaymentMethod = method;
 
     if (_orderSummary != null) {
+      final currentState = state;
       emit(PaymentLoaded(
         orderSummary: _orderSummary!,
         selectedPaymentMethod: _selectedPaymentMethod,
         orderCode: _maDonHang,
+        timeSlotId: currentState is PaymentLoaded ? currentState.timeSlotId : 'KG10',
       ));
+    }
+  }
+
+  /// Cập nhật thông tin giao hàng
+  void updateAddress({
+    required String name,
+    required String phone,
+    required String address,
+  }) {
+    if (_orderSummary != null) {
+      _orderSummary = _orderSummary!.copyWith(
+        customerName: name,
+        phoneNumber: phone,
+        deliveryAddress: address,
+      );
+      
+      final currentState = state;
+      if (currentState is PaymentLoaded) {
+        emit(currentState.copyWith(
+          orderSummary: _orderSummary!,
+          addressSuggestions: [], // Clear suggestions khi đã confirm
+        ));
+      } else {
+        emit(PaymentLoaded(
+          orderSummary: _orderSummary!,
+          selectedPaymentMethod: _selectedPaymentMethod,
+          orderCode: _maDonHang,
+        ));
+      }
+    }
+  }
+
+  /// Tìm kiếm gợi ý địa chỉ
+  void searchAddress(String query) {
+    final currentState = state;
+    if (currentState is! PaymentLoaded) return;
+
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      if (query.length >= 3) {
+        emit(currentState.copyWith(isSearchingAddress: true, addressSuggestions: []));
+        
+        final suggestions = await _geocodingService.searchAddress(query);
+        
+        if (isClosed) return;
+        
+        final newState = state;
+        if (newState is PaymentLoaded) {
+          emit(newState.copyWith(
+            isSearchingAddress: false,
+            addressSuggestions: suggestions,
+          ));
+        }
+      } else {
+        emit(currentState.copyWith(addressSuggestions: []));
+      }
+    });
+  }
+
+  /// Chọn một gợi ý địa chỉ
+  void selectAddressSuggestion(MapSuggestion suggestion) {
+    if (_orderSummary != null) {
+      _orderSummary = _orderSummary!.copyWith(
+        deliveryAddress: suggestion.displayName,
+      );
+      
+      final currentState = state;
+      if (currentState is PaymentLoaded) {
+        emit(currentState.copyWith(
+          orderSummary: _orderSummary!,
+          addressSuggestions: [],
+        ));
+      }
+    }
+  }
+
+  /// Xóa danh sách gợi ý
+  void clearSuggestions() {
+    final currentState = state;
+    if (currentState is PaymentLoaded) {
+      emit(currentState.copyWith(addressSuggestions: []));
+    }
+  }
+
+  /// Cập nhật ghi chú
+  void updateNotes(String notes) {
+    if (_orderSummary != null) {
+      _orderSummary = _orderSummary!.copyWith(notes: notes);
+      
+      final currentState = state;
+      if (currentState is PaymentLoaded) {
+        emit(currentState.copyWith(orderSummary: _orderSummary!));
+      }
+    }
+  }
+
+  /// Cập nhật Time Slot ID
+  void updateTimeSlotId(String slotId) {
+    final currentState = state;
+    if (currentState is PaymentLoaded) {
+      emit(currentState.copyWith(timeSlotId: slotId));
     }
   }
 
@@ -369,6 +478,7 @@ class PaymentCubit extends Cubit<PaymentState> {
         if (phoneNumber.isEmpty) {
           phoneNumber = '0912345678';
         }
+        // Ưu tiên địa chỉ user đã thay đổi trên trang thanh toán
         String address = _orderSummary!.deliveryAddress;
 
         try {
@@ -386,9 +496,8 @@ class PaymentCubit extends Cubit<PaymentState> {
             }
           }
 
-          if (profile.diaChi != null && profile.diaChi!.isNotEmpty) {
-            address = profile.diaChi!;
-          }
+          // KHÔNG ghi đè address từ profile nữa
+          // Giữ nguyên address mà user đã chọn trên trang thanh toán
         } catch (_) {
           // bỏ qua, giữ fallback
         }
@@ -397,10 +506,14 @@ class PaymentCubit extends Cubit<PaymentState> {
           phoneNumber = '0912345678';
         }
 
+        // Loại bỏ đuôi ', Việt Nam' / ', Vietnam' để backend ghi nhận được
+        address = _cleanAddressForBackend(address);
+
         final recipient = {
           'name': userName,
           'phone': phoneNumber,
           'address': address,
+          'notes': _orderSummary?.notes ?? '',
         };
         
         if (AppConfig.enableApiLogging) {
@@ -421,12 +534,16 @@ class PaymentCubit extends Cubit<PaymentState> {
           }
         }
 
+        // Gọi API checkout
+        final currentState = state;
         final checkoutResponse = await cartApiService.checkout(
           selectedItems: selectedItems,
           // Backend chỉ chấp nhận 'chuyen_khoan' hoặc 'tien_mat'.
           // Dùng 'chuyen_khoan' để tạo đơn cho VNPay.
           paymentMethod: 'chuyen_khoan',
           recipient: recipient,
+          deliveryAddress: address,
+          timeSlotId: currentState is PaymentLoaded ? currentState.timeSlotId : 'KG10',
         );
         
         if (AppConfig.enableApiLogging) {
@@ -548,6 +665,7 @@ class PaymentCubit extends Cubit<PaymentState> {
         if (phoneNumber.isEmpty) {
           phoneNumber = '0912345678'; // fallback an toàn
         }
+        // Ưu tiên địa chỉ user đã thay đổi trên trang thanh toán
         String address = _orderSummary!.deliveryAddress;
 
         try {
@@ -567,16 +685,14 @@ class PaymentCubit extends Cubit<PaymentState> {
             }
           }
 
-          // Lấy địa chỉ từ profile
-          if (profile.diaChi != null && profile.diaChi!.isNotEmpty) {
-            address = profile.diaChi!;
-          }
+          // KHÔNG ghi đè address từ profile nữa
+          // Giữ nguyên address mà user đã chọn trên trang thanh toán
 
           if (AppConfig.enableApiLogging) {
             AppLogger.info('👤 [PAYMENT] User profile loaded');
             AppLogger.info('👤 [PAYMENT] Name: $userName');
             AppLogger.info('👤 [PAYMENT] Phone: $phoneNumber');
-            AppLogger.info('👤 [PAYMENT] Address: $address');
+            AppLogger.info('👤 [PAYMENT] Address (from order): $address');
           }
         } catch (e) {
           if (AppConfig.enableApiLogging) {
@@ -594,10 +710,14 @@ class PaymentCubit extends Cubit<PaymentState> {
           phoneNumber = '0912345678';
         }
 
+        // Loại bỏ đuôi ', Việt Nam' / ', Vietnam' để backend ghi nhận được
+        address = _cleanAddressForBackend(address);
+
         final recipient = {
           'name': userName,
           'phone': phoneNumber,
           'address': address,
+          'notes': _orderSummary?.notes ?? '',
         };
 
         if (AppConfig.enableApiLogging) {
@@ -606,11 +726,14 @@ class PaymentCubit extends Cubit<PaymentState> {
         }
 
         // Gọi API checkout với payment_method = 'tien_mat'
+        final currentState = state;
         final cartApiService = CartApiService();
         final checkoutResponse = await cartApiService.checkout(
           selectedItems: selectedItems,
           paymentMethod: 'tien_mat',
           recipient: recipient,
+          deliveryAddress: address,
+          timeSlotId: currentState is PaymentLoaded ? currentState.timeSlotId : 'KG10',
         );
 
         if (isClosed) return;
@@ -730,6 +853,35 @@ class PaymentCubit extends Cubit<PaymentState> {
       }
       return order;
     }
+  }
+
+  /// Loại bỏ đuôi ', Việt Nam' / ', Vietnam' khỏi địa chỉ
+  /// Backend chỉ ghi nhận thay đổi địa chỉ nếu không có đuôi này
+  String _cleanAddressForBackend(String address) {
+    var cleaned = address.trim();
+    
+    // Loại bỏ các biến thể đuôi Việt Nam
+    final suffixes = [
+      ', Việt Nam',
+      ', Vietnam',
+      ', Viet Nam',
+      ',Việt Nam',
+      ',Vietnam',
+      ',Viet Nam',
+    ];
+    
+    for (final suffix in suffixes) {
+      if (cleaned.toLowerCase().endsWith(suffix.toLowerCase())) {
+        cleaned = cleaned.substring(0, cleaned.length - suffix.length).trim();
+        break;
+      }
+    }
+    
+    if (AppConfig.enableApiLogging) {
+      AppLogger.info('📍 [PAYMENT] Address cleaned: "$address" -> "$cleaned"');
+    }
+    
+    return cleaned;
   }
 
   /// Chuẩn hóa số điện thoại theo regex /^(0|\+84)\d{9,10}$/

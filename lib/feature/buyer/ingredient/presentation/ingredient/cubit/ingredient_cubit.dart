@@ -22,14 +22,87 @@ class IngredientCubit extends Cubit<IngredientState> {
     }
   }
 
-  /// Load dữ liệu ban đầu
+  /// Load dữ liệu ban đầu - Tối ưu: song song hóa tất cả API calls
   Future<void> loadIngredientData() async {
     emit(const IngredientLoading());
 
-    // Fetch categories từ API
     List<Category> categories = [];
     List<Category> additionalCategories = [];
-    
+    List<Product> products = [];
+    List<String> shopNames = [];
+    List<Shop> shops = [];
+    String? selectedMarketMa;
+
+    try {
+      // ⚡ Song song hóa: Fetch categories, ingredients, và shops cùng lúc
+      final results = await Future.wait([
+        // 1. Fetch categories
+        _fetchCategories(),
+        // 2. Fetch ingredients
+        _fetchIngredients(selectedMarketMa),
+        // 3. Fetch shops (chỉ trang đầu)
+        _fetchShopsFirstPage(),
+      ]);
+
+      // Parse kết quả categories
+      final categoriesResult = results[0] as List<Category>;
+      if (categoriesResult.length > 5) {
+        categories = categoriesResult.sublist(0, 5);
+        additionalCategories = categoriesResult.sublist(5);
+      } else {
+        categories = categoriesResult;
+      }
+
+      // Parse kết quả ingredients
+      final ingredientResult = results[1] as Map<String, dynamic>;
+      products = ingredientResult['products'] as List<Product>;
+      shopNames = ingredientResult['shopNames'] as List<String>;
+
+      // Parse kết quả shops
+      final shopsResult = results[2] as Map<String, dynamic>;
+      shops = shopsResult['shops'] as List<Shop>;
+      final hasMoreShops = shopsResult['hasMore'] as bool;
+
+      print('⚡ [IngredientCubit] Loaded in parallel: ${categories.length + additionalCategories.length} categories, ${products.length} products, ${shops.length} shops');
+
+      emit(IngredientLoaded(
+        categories: categories,
+        additionalCategories: additionalCategories,
+        shops: shops,
+        products: products,
+        shopNames: shopNames,
+        selectedBottomNavIndex: 3,
+        cartItemCount: 0,
+        currentPage: 1,
+        hasMoreProducts: true,
+        isLoadingMore: false,
+        selectedMarketMa: selectedMarketMa,
+      ));
+
+      // Load thêm shops ở background (không block UI)
+      if (hasMoreShops) {
+        _loadRemainingShops(shops);
+      }
+    } catch (e) {
+      print('❌ [IngredientCubit] Error loading data: $e');
+      // Fallback: emit với data rỗng
+      emit(IngredientLoaded(
+        categories: _getMockCategories(),
+        additionalCategories: _getMockAdditionalCategories(),
+        shops: const [],
+        products: const [],
+        shopNames: const [],
+        selectedBottomNavIndex: 3,
+        cartItemCount: 0,
+        currentPage: 1,
+        hasMoreProducts: false,
+        isLoadingMore: false,
+      ));
+    }
+  }
+
+  /// Fetch categories từ API
+  Future<List<Category>> _fetchCategories() async {
     try {
       if (_danhMucNguyenLieuService != null) {
         final response = await _danhMucNguyenLieuService!.getDanhMucNguyenLieuList(
@@ -38,93 +111,32 @@ class IngredientCubit extends Cubit<IngredientState> {
           sort: 'ten_nhom_nguyen_lieu',
           order: 'asc',
         );
-        
-        // Convert API data to Category model
-        final allCategories = response.data.map((danhMuc) {
+        return response.data.map((danhMuc) {
           return Category(
             maNhomNguyenLieu: danhMuc.maNhomNguyenLieu,
             name: danhMuc.tenNhomNguyenLieu,
-            imagePath: '', // Không có ảnh từ API
+            imagePath: '',
           );
         }).toList();
-        
-        // Split into main and additional categories
-        if (allCategories.length > 5) {
-          categories = allCategories.sublist(0, 5);
-          additionalCategories = allCategories.sublist(5);
-        } else {
-          categories = allCategories;
-        }
-        
-        print('✅ Fetched ${allCategories.length} categories from API');
-      } else {
-        throw Exception('DanhMucNguyenLieuService not available');
       }
     } catch (e) {
       print('⚠️ Lỗi khi fetch danh mục: $e');
-      // Fallback to mock data
-      categories = [
-        const Category(
-          name: 'Rau củ',
-          imagePath: 'assets/img/ingredient_category_rau_cu.png',
-        ),
-        const Category(
-          name: 'Trái cây',
-          imagePath: 'assets/img/ingredient_category_trai_cay-2bc751.png',
-        ),
-        const Category(
-          name: 'Thịt',
-          imagePath: 'assets/img/ingredient_category_thit.png',
-        ),
-        const Category(
-          name: 'Thuỷ sản',
-          imagePath: 'assets/img/ingredient_category_thuy_san-42d575.png',
-        ),
-        const Category(
-          name: 'Bánh kẹo',
-          imagePath: 'assets/img/ingredient_category_banh_keo-512c43.png',
-        ),
-      ];
-
-      additionalCategories = [
-        const Category(
-          name: 'Dưỡng thể',
-          imagePath: 'assets/img/ingredient_category_duong_the.png',
-        ),
-        const Category(
-          name: 'Gia vị',
-          imagePath: 'assets/img/ingredient_category_gia_vi-122bd9.png',
-        ),
-        const Category(
-          name: 'Sữa các loại',
-          imagePath: 'assets/img/ingredient_category_sua-b32339.png',
-        ),
-        const Category(
-          name: 'Đồ uống',
-          imagePath: 'assets/img/ingredient_category_do_uong.png',
-        ),
-      ];
     }
+    return _getMockCategories() + _getMockAdditionalCategories();
+  }
 
-    // Fetch nguyên liệu từ API
-    List<Product> products = [];
-    List<String> shopNames = [];
-    String? selectedMarketMa; // Lưu mã chợ nếu có
-    
+  /// Fetch ingredients từ API
+  Future<Map<String, dynamic>> _fetchIngredients(String? maCho) async {
     try {
       if (_nguyenLieuService != null) {
-        // TODO: Lấy mã chợ từ ProductCubit hoặc local storage
-        // Tạm thời để null để fetch tất cả
         final response = await _nguyenLieuService!.getNguyenLieuList(
           page: 1,
           limit: 12,
           sort: 'ten_nguyen_lieu',
           order: 'asc',
-          maCho: selectedMarketMa, // Truyền mã chợ vào
+          maCho: maCho,
         );
-        
-        // Convert API data to Product model
-        products = response.data.map((nguyenLieu) {
+        final products = response.data.map((nguyenLieu) {
           return Product(
             maNguyenLieu: nguyenLieu.maNguyenLieu,
             name: nguyenLieu.tenNguyenLieu,
@@ -136,68 +148,29 @@ class IngredientCubit extends Cubit<IngredientState> {
             originalPrice: _formatOriginalPrice(nguyenLieu.giaGoc, nguyenLieu.giaCuoi),
           );
         }).toList();
-        
-        // Extract shop names from categories
-        shopNames = response.data
+        final shopNames = response.data
             .map((nguyenLieu) => nguyenLieu.tenNhomNguyenLieu)
             .toSet()
             .toList();
-        
-        print('✅ Fetched ${products.length} nguyên liệu from API');
-      } else {
-        throw Exception('NguyenLieuService not available');
+        return {'products': products, 'shopNames': shopNames};
       }
     } catch (e) {
       print('⚠️ Lỗi khi fetch nguyên liệu: $e');
-      // Fallback to mock data
-      products = [
-        const Product(
-          name: 'TRỨNG GÀ CÔNG NGHIỆP VỈ 30 QUẢ',
-          price: '48.000đ',
-          imagePath: 'assets/img/ingredient_product_2-46bf93.png',
-          shopName: 'Cô Hồng',
-          badge: 'Flash sale',
-          hasDiscount: true,
-          originalPrice: '59.000đ',
-        ),
-        const Product(
-          name: 'CÁNH GÀ CÔNG NGHIỆP ĐÔNG LẠNH VFOOD CHẤT LƯỢNG',
-          price: '59.000đ',
-          imagePath: 'assets/img/ingredient_product_1.png',
-          shopName: 'Cô Hồng',
-          badge: 'Đang bán chạy',
-        ),
-        const Product(
-          name: 'CÁNH GÀ CÔNG NGHIỆP ĐÔNG LẠNH VFOOD CHẤT LƯỢNG',
-          price: '19.000đ',
-          imagePath: 'assets/img/ingredient_product_1.png',
-          shopName: 'Cô Như',
-          badge: 'Đã bán 129',
-        ),
-        const Product(
-          name: 'SOCOLA ĐEN COMPOUND DẠNG KEM QUE 8CM',
-          price: '143.000đ',
-          imagePath: 'assets/img/ingredient_product_1.png',
-          shopName: 'Cô Nhi',
-          badge: 'Đã bán 56',
-        ),
-      ];
-      shopNames = ['Cô Hồng', 'Cô Như', 'Cô Nhi'];
     }
+    return {'products': <Product>[], 'shopNames': <String>[]};
+  }
 
-    // Fetch shops từ API - load tất cả gian hàng
-    List<Shop> shops = [];
+  /// Fetch shops trang đầu (nhanh, không block)
+  Future<Map<String, dynamic>> _fetchShopsFirstPage() async {
     try {
       if (_gianHangService != null) {
-        // Fetch trang đầu để lấy total
-        final firstResponse = await _gianHangService!.getGianHangList(
+        final response = await _gianHangService!.getGianHangList(
           page: 1,
-          limit: 50, // Tăng limit để lấy nhiều hơn
+          limit: 50,
           sort: 'ten_gian_hang',
           order: 'asc',
         );
-        
-        shops = firstResponse.data.map((gianHang) {
+        final shops = response.data.map((gianHang) {
           return Shop(
             id: gianHang.maGianHang,
             name: gianHang.tenGianHang,
@@ -206,56 +179,68 @@ class IngredientCubit extends Cubit<IngredientState> {
             distance: gianHang.viTri,
           );
         }).toList();
-        
-        // Nếu còn shops chưa load, fetch tiếp
-        if (firstResponse.meta.hasNext) {
-          int currentPage = 2;
-          while (true) {
-            final nextResponse = await _gianHangService!.getGianHangList(
-              page: currentPage,
-              limit: 50,
-              sort: 'ten_gian_hang',
-              order: 'asc',
-            );
-            
-            shops.addAll(nextResponse.data.map((gianHang) {
-              return Shop(
-                id: gianHang.maGianHang,
-                name: gianHang.tenGianHang,
-                imagePath: _getValidImagePath(gianHang.hinhAnh),
-                rating: gianHang.danhGiaTb > 0 ? gianHang.danhGiaTb.toStringAsFixed(1) : null,
-                distance: gianHang.viTri,
-              );
-            }));
-            
-            if (!nextResponse.meta.hasNext) break;
-            currentPage++;
-          }
-        }
-        
-        print('✅ Fetched ${shops.length} shops from API (total: ${firstResponse.meta.total})');
-      } else {
-        throw Exception('GianHangService not available');
+        return {'shops': shops, 'hasMore': response.meta.hasNext};
       }
     } catch (e) {
       print('⚠️ Lỗi khi fetch gian hàng: $e');
-      // Fallback to mock data nếu API lỗi
     }
-
-    emit(IngredientLoaded(
-      categories: categories,
-      additionalCategories: additionalCategories,
-      shops: shops,
-      products: products,
-      shopNames: shopNames,
-      selectedBottomNavIndex: 3, // 3 = Nguyên liệu tab
-      cartItemCount: 0,
-      currentPage: 1,
-      hasMoreProducts: true, // Assume có thêm products
-      isLoadingMore: false,
-      selectedMarketMa: selectedMarketMa, // Lưu mã chợ vào state
-    ));
+    return {'shops': <Shop>[], 'hasMore': false};
   }
+
+  /// Load thêm shops ở background (không block UI)
+  Future<void> _loadRemainingShops(List<Shop> initialShops) async {
+    try {
+      if (_gianHangService == null || state is! IngredientLoaded) return;
+      
+      List<Shop> allShops = List.from(initialShops);
+      int currentPage = 2;
+      
+      while (true) {
+        final nextResponse = await _gianHangService!.getGianHangList(
+          page: currentPage,
+          limit: 50,
+          sort: 'ten_gian_hang',
+          order: 'asc',
+        );
+        
+        allShops.addAll(nextResponse.data.map((gianHang) {
+          return Shop(
+            id: gianHang.maGianHang,
+            name: gianHang.tenGianHang,
+            imagePath: _getValidImagePath(gianHang.hinhAnh),
+            rating: gianHang.danhGiaTb > 0 ? gianHang.danhGiaTb.toStringAsFixed(1) : null,
+            distance: gianHang.viTri,
+          );
+        }));
+        
+        if (!nextResponse.meta.hasNext) break;
+        currentPage++;
+      }
+      
+      if (!isClosed && state is IngredientLoaded) {
+        emit((state as IngredientLoaded).copyWith(shops: allShops));
+        print('✅ [Background] Loaded all ${allShops.length} shops');
+      }
+    } catch (e) {
+      print('⚠️ Background shop loading failed: $e');
+    }
+  }
+
+  /// Mock categories fallback
+  List<Category> _getMockCategories() => [
+    const Category(name: 'Rau củ', imagePath: 'assets/img/ingredient_category_rau_cu.png'),
+    const Category(name: 'Trái cây', imagePath: 'assets/img/ingredient_category_trai_cay-2bc751.png'),
+    const Category(name: 'Thịt', imagePath: 'assets/img/ingredient_category_thit.png'),
+    const Category(name: 'Thuỷ sản', imagePath: 'assets/img/ingredient_category_thuy_san-42d575.png'),
+    const Category(name: 'Bánh kẹo', imagePath: 'assets/img/ingredient_category_banh_keo-512c43.png'),
+  ];
+
+  List<Category> _getMockAdditionalCategories() => [
+    const Category(name: 'Dưỡng thể', imagePath: 'assets/img/ingredient_category_duong_the.png'),
+    const Category(name: 'Gia vị', imagePath: 'assets/img/ingredient_category_gia_vi-122bd9.png'),
+    const Category(name: 'Sữa các loại', imagePath: 'assets/img/ingredient_category_sua-b32339.png'),
+    const Category(name: 'Đồ uống', imagePath: 'assets/img/ingredient_category_do_uong.png'),
+  ];
 
   /// Chọn khu vực (chưa load nguyên liệu, chờ chọn chợ)
   void selectRegion(String maKhuVuc, String tenKhuVuc) {

@@ -131,54 +131,78 @@ class CategoryProductCubit extends Cubit<CategoryProductState> {
     }
   }
 
+  /// Helper: Tạo URL ảnh đầy đủ từ path
+  String _buildImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return 'assets/img/mon_an_icon.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return '${AppConfig.imageBaseUrl}${imagePath.startsWith('/') ? '' : '/'}$imagePath';
+  }
+
   /// Fetch chi tiết (ảnh, thời gian nấu, độ khó, khẩu phần) cho danh sách món ăn
+  /// Tối ưu: Song song hóa API calls theo batch
   Future<List<MonAnWithImage>> _fetchMonAnImages(List<MonAnModel> monAnList) async {
-    final result = <MonAnWithImage>[];
+    final resultMap = <int, MonAnWithImage>{};
+    final needFetch = <int, MonAnModel>{};
 
     for (int i = 0; i < monAnList.length; i++) {
       final monAn = monAnList[i];
-      try {
-        // Ưu tiên dùng ảnh từ monAn (list API) nếu có
-        if (monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty) {
-          result.add(MonAnWithImage(
-            monAn: monAn,
-            imageUrl: monAn.hinhAnh!.startsWith('http') 
-                ? monAn.hinhAnh! 
-                : '${AppConfig.imageBaseUrl}${monAn.hinhAnh!.startsWith('/') ? '' : '/'}${monAn.hinhAnh}',
-            cookTime: 40,
-            difficulty: 'Dễ',
-            servings: 4,
-          ));
-          continue;
-        }
-
-        print('   [${i + 1}/${monAnList.length}] Fetch chi tiết: ${monAn.maMonAn} - ${monAn.tenMonAn}');
-        final detail = await _monAnService.getMonAnDetail(monAn.maMonAn);
-        
-        result.add(MonAnWithImage(
+      if (monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty) {
+        resultMap[i] = MonAnWithImage(
           monAn: monAn,
-          imageUrl: detail.hinhAnh.isNotEmpty 
-              ? (detail.hinhAnh.startsWith('http') ? detail.hinhAnh : '${AppConfig.imageBaseUrl}${detail.hinhAnh.startsWith('/') ? '' : '/'}${detail.hinhAnh}')
-              : 'assets/img/mon_an_icon.png',
-          cookTime: detail.khoangThoiGian ?? 40,
-          difficulty: detail.doKho ?? 'Dễ',
-          servings: detail.khauPhanTieuChuan ?? 4,
-        ));
-      } catch (e) {
-        print('❌ [ERROR] Lỗi khi lấy chi tiết cho món ${monAn.maMonAn}: $e');
-        // Fallback: dùng ảnh từ monAn nếu có
-        result.add(MonAnWithImage(
-          monAn: monAn,
-          imageUrl: monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty
-              ? (monAn.hinhAnh!.startsWith('http') ? monAn.hinhAnh! : '${AppConfig.imageBaseUrl}${monAn.hinhAnh!.startsWith('/') ? '' : '/'}${monAn.hinhAnh}')
-              : 'assets/img/mon_an_icon.png',
+          imageUrl: _buildImageUrl(monAn.hinhAnh),
           cookTime: 40,
           difficulty: 'Dễ',
           servings: 4,
-        ));
+        );
+      } else {
+        needFetch[i] = monAn;
       }
     }
 
-    return result;
+    print('⚡ [CategoryProductCubit] ${resultMap.length} có ảnh sẵn, ${needFetch.length} cần fetch');
+
+    if (needFetch.isNotEmpty) {
+      final entries = needFetch.entries.toList();
+      const batchSize = 4;
+
+      for (int batchStart = 0; batchStart < entries.length; batchStart += batchSize) {
+        final batchEnd = (batchStart + batchSize).clamp(0, entries.length);
+        final batch = entries.sublist(batchStart, batchEnd);
+
+        final futures = batch.map((entry) async {
+          final index = entry.key;
+          final monAn = entry.value;
+          try {
+            final detail = await _monAnService.getMonAnDetail(monAn.maMonAn);
+            return MapEntry(index, MonAnWithImage(
+              monAn: monAn,
+              imageUrl: detail.hinhAnh.isNotEmpty
+                  ? _buildImageUrl(detail.hinhAnh)
+                  : 'assets/img/mon_an_icon.png',
+              cookTime: detail.khoangThoiGian ?? 40,
+              difficulty: detail.doKho ?? 'Dễ',
+              servings: detail.khauPhanTieuChuan ?? 4,
+            ));
+          } catch (e) {
+            print('⚠️ Lỗi fetch detail ${monAn.maMonAn}: $e');
+            return MapEntry(index, MonAnWithImage(
+              monAn: monAn,
+              imageUrl: _buildImageUrl(monAn.hinhAnh),
+              cookTime: 40,
+              difficulty: 'Dễ',
+              servings: 4,
+            ));
+          }
+        });
+
+        final results = await Future.wait(futures);
+        for (final entry in results) {
+          resultMap[entry.key] = entry.value;
+        }
+      }
+    }
+
+    final sortedKeys = resultMap.keys.toList()..sort();
+    return sortedKeys.map((key) => resultMap[key]!).toList();
   }
 }

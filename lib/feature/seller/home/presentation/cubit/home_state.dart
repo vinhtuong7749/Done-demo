@@ -95,7 +95,7 @@ class SellerHomeState extends Equatable {
     this.recentOrders = const [],
     this.revenueChangePercentage = 0,
     this.currentTabIndex = 0,
-    this.isStoreOpen = true,
+    this.isStoreOpen = false,
     this.maGianHang,
   });
 

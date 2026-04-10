@@ -186,4 +186,10 @@ class SellerUserCubit extends Cubit<SellerUserState> {
   Future<void> refreshData() async {
     await loadUserInfo();
   }
+
+  void editPersonalInfo() {}
+  void editMarketInfo() {}
+  void editAccountNumber() {}
+  void editBankInfo() {}
+  void editPhoneNumber() {}
 }

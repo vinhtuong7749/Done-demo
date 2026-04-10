@@ -180,6 +180,8 @@ class CartApiService {
     required List<Map<String, String>> selectedItems,
     String? paymentMethod,
     Map<String, String>? recipient,
+    String? deliveryAddress,
+    String timeSlotId = '1', // Default slot
   }) async {
     if (AppConfig.enableApiLogging) {
       AppLogger.info('💳 [CART API] Checkout with ${selectedItems.length} items');
@@ -213,7 +215,12 @@ class CartApiService {
       // Thêm recipient nếu có
       if (recipient != null) {
         requestBody['recipient'] = recipient;
+        // Backend yêu cầu delivery_address ở root
+        requestBody['delivery_address'] = deliveryAddress ?? recipient['address'] ?? '';
       }
+      
+      // Backend yêu cầu time_slot_id ở root
+      requestBody['time_slot_id'] = timeSlotId;
 
       if (AppConfig.enableApiLogging) {
         AppLogger.info('💳 [CART API] Request body: $requestBody');

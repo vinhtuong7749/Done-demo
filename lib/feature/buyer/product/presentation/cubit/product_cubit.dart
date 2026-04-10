@@ -131,55 +131,85 @@ class ProductCubit extends Cubit<ProductState> {
     }
   }
 
+  /// Helper: Tạo URL ảnh đầy đủ từ path
+  String _buildImageUrl(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) return 'assets/img/mon_an_icon.png';
+    if (imagePath.startsWith('http')) return imagePath;
+    return '${AppConfig.imageBaseUrl}${imagePath.startsWith('/') ? '' : '/'}$imagePath';
+  }
+
   /// Fetch chi tiết (ảnh, thời gian nấu, độ khó, khẩu phần) cho danh sách món ăn
   /// 
-  /// Gọi API detail cho từng món để lấy URL ảnh và thông tin chi tiết
+  /// Tối ưu: Dùng ảnh từ list API khi có, chỉ gọi detail API song song cho các món thiếu ảnh
   Future<List<MonAnWithImage>> _fetchMonAnImages(List<MonAnModel> monAnList) async {
-    final result = <MonAnWithImage>[];
+    // Bước 1: Tách ra món đã có ảnh (không cần gọi API) và món cần fetch ảnh
+    final resultMap = <int, MonAnWithImage>{};
+    final needFetch = <int, MonAnModel>{}; // index -> monAn cần fetch detail
     
-    for (final monAn in monAnList) {
-      try {
-        // Ưu tiên dùng ảnh từ monAn nếu có (list API)
-        if (monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty) {
-           result.add(MonAnWithImage(
-            monAn: monAn,
-            imageUrl: monAn.hinhAnh!.startsWith('http') 
-                ? monAn.hinhAnh! 
-                : '${AppConfig.imageBaseUrl}${monAn.hinhAnh!.startsWith('/') ? '' : '/'}${monAn.hinhAnh}',
-            cookTime: 40,
-            difficulty: 'Dễ',
-            servings: 4,
-          ));
-          continue;
-        }
-
-        // Gọi API detail để lấy ảnh và thông tin chi tiết
-        final detail = await _monAnService.getMonAnDetail(monAn.maMonAn);
-        result.add(MonAnWithImage(
+    for (int i = 0; i < monAnList.length; i++) {
+      final monAn = monAnList[i];
+      if (monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty) {
+        // Đã có ảnh từ list API → không cần gọi detail
+        resultMap[i] = MonAnWithImage(
           monAn: monAn,
-          imageUrl: detail.hinhAnh.isNotEmpty 
-              ? (detail.hinhAnh.startsWith('http') ? detail.hinhAnh : '${AppConfig.imageBaseUrl}${detail.hinhAnh.startsWith('/') ? '' : '/'}${detail.hinhAnh}')
-              : 'assets/img/mon_an_icon.png',
-          cookTime: detail.khoangThoiGian ?? 40, // khoang_thoi_gian
-          difficulty: detail.doKho ?? 'Dễ', // do_kho
-          servings: detail.khauPhanTieuChuan ?? 4, // khau_phan_tieu_chuan
-        ));
-      } catch (e) {
-        // Nếu lỗi, dùng giá trị mặc định và fallback ảnh từ monAn
-        print('Lỗi khi lấy chi tiết cho món ${monAn.maMonAn}: $e');
-        result.add(MonAnWithImage(
-          monAn: monAn,
-          imageUrl: monAn.hinhAnh != null && monAn.hinhAnh!.isNotEmpty
-              ? (monAn.hinhAnh!.startsWith('http') ? monAn.hinhAnh! : '${AppConfig.imageBaseUrl}${monAn.hinhAnh!.startsWith('/') ? '' : '/'}${monAn.hinhAnh}')
-              : 'assets/img/mon_an_icon.png',
+          imageUrl: _buildImageUrl(monAn.hinhAnh),
           cookTime: 40,
           difficulty: 'Dễ',
           servings: 4,
-        ));
+        );
+      } else {
+        needFetch[i] = monAn;
       }
     }
     
-    return result;
+    print('⚡ [ProductCubit] ${resultMap.length} có ảnh sẵn, ${needFetch.length} cần fetch detail');
+    
+    // Bước 2: Fetch song song các món cần ảnh (batch 4 để không quá tải server)
+    if (needFetch.isNotEmpty) {
+      final entries = needFetch.entries.toList();
+      const batchSize = 4;
+      
+      for (int batchStart = 0; batchStart < entries.length; batchStart += batchSize) {
+        final batchEnd = (batchStart + batchSize).clamp(0, entries.length);
+        final batch = entries.sublist(batchStart, batchEnd);
+        
+        // Gọi song song trong batch
+        final futures = batch.map((entry) async {
+          final index = entry.key;
+          final monAn = entry.value;
+          try {
+            final detail = await _monAnService.getMonAnDetail(monAn.maMonAn);
+            return MapEntry(index, MonAnWithImage(
+              monAn: monAn,
+              imageUrl: detail.hinhAnh.isNotEmpty 
+                  ? _buildImageUrl(detail.hinhAnh)
+                  : 'assets/img/mon_an_icon.png',
+              cookTime: detail.khoangThoiGian ?? 40,
+              difficulty: detail.doKho ?? 'Dễ',
+              servings: detail.khauPhanTieuChuan ?? 4,
+            ));
+          } catch (e) {
+            print('⚠️ Lỗi fetch detail ${monAn.maMonAn}: $e');
+            return MapEntry(index, MonAnWithImage(
+              monAn: monAn,
+              imageUrl: _buildImageUrl(monAn.hinhAnh),
+              cookTime: 40,
+              difficulty: 'Dễ',
+              servings: 4,
+            ));
+          }
+        });
+        
+        final results = await Future.wait(futures);
+        for (final entry in results) {
+          resultMap[entry.key] = entry.value;
+        }
+      }
+    }
+    
+    // Bước 3: Trả về kết quả theo đúng thứ tự ban đầu
+    final sortedKeys = resultMap.keys.toList()..sort();
+    return sortedKeys.map((key) => resultMap[key]!).toList();
   }
 
   /// Chọn danh mục sản phẩm
