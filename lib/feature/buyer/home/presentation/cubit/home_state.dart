@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../../core/models/llm_chat_models.dart';
+
 /// State cho Home Screen
 class HomeState extends Equatable {
   final String userName;
@@ -9,7 +11,8 @@ class HomeState extends Equatable {
   final int selectedBottomNavIndex;
   final int cartItemCount;
   final String? errorMessage;
-  final String? conversationId; // Thêm conversation ID
+  final String? conversationId;
+  final List<LlmChatHistoryItem> history;
 
   const HomeState({
     this.userName = 'Quỳnh Như',
@@ -20,6 +23,7 @@ class HomeState extends Equatable {
     this.cartItemCount = 0,
     this.errorMessage,
     this.conversationId,
+    this.history = const [],
   });
 
   HomeState copyWith({
@@ -31,6 +35,7 @@ class HomeState extends Equatable {
     int? cartItemCount,
     String? errorMessage,
     String? conversationId,
+    List<LlmChatHistoryItem>? history,
   }) {
     return HomeState(
       userName: userName ?? this.userName,
@@ -41,6 +46,7 @@ class HomeState extends Equatable {
       cartItemCount: cartItemCount ?? this.cartItemCount,
       errorMessage: errorMessage ?? this.errorMessage,
       conversationId: conversationId ?? this.conversationId,
+      history: history ?? this.history,
     );
   }
 
@@ -54,6 +60,7 @@ class HomeState extends Equatable {
         cartItemCount,
         errorMessage,
         conversationId,
+        history,
       ];
 }
 
