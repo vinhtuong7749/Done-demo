@@ -127,6 +127,16 @@ class _UserView extends StatelessWidget {
               Navigator.pushNamed(context, RouteName.cart);
             },
           ),
+          const SizedBox(height: 12),
+          _buildMenuItem(
+            context,
+            icon: Icons.chat_bubble_outline,
+            iconColor: const Color(0xFF9C27B0),
+            label: 'Tin nhắn với người bán',
+            onTap: () {
+              Navigator.pushNamed(context, RouteName.chat);
+            },
+          ),
         ],
       ),
     );
