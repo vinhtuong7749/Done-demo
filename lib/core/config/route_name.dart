@@ -89,4 +89,5 @@ class RouteName {
   static const String writeReview = '/write-review';
   static const String support = '/support';
   static const String chat = '/chat';
+  static const String chatRoom = '/chat-room';
 }

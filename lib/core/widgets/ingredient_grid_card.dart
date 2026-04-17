@@ -28,83 +28,82 @@ class IngredientGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Section
-            Expanded(
-              flex: 3,
-              child: _buildImageSection(),
-            ),
-            
-            // Info Section
-            Expanded(
-              flex: 2,
-              child: _buildInfoSection(),
-            ),
-          ],
+      child: Opacity(
+        opacity: isShopOpen ? 1 : 0.58,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE0E0E0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Section
+              Expanded(flex: 3, child: _buildImageSection()),
+
+              // Info Section
+              Expanded(flex: 2, child: _buildInfoSection()),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildImageSection() {
-    final isNetworkImage = imagePath != null && 
+    final isNetworkImage =
+        imagePath != null &&
         (imagePath!.startsWith('http://') || imagePath!.startsWith('https://'));
-    
+
     return Stack(
       children: [
         ClipRRect(
           borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
           child: imagePath != null && imagePath!.isNotEmpty
               ? (isNetworkImage
-                  ? Image.network(
-                      imagePath!,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                          color: Colors.grey[100],
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / 
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                              strokeWidth: 2,
-                              color: const Color(0xFF00B40F),
+                    ? Image.network(
+                        imagePath!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: Colors.grey[100],
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                                color: const Color(0xFF00B40F),
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholder();
-                      },
-                    )
-                  : Image.asset(
-                      imagePath!,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return _buildPlaceholder();
-                      },
-                    ))
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholder();
+                        },
+                      )
+                    : Image.asset(
+                        imagePath!,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildPlaceholder();
+                        },
+                      ))
               : _buildPlaceholder(),
         ),
         if (!isShopOpen)
@@ -112,17 +111,22 @@ class IngredientGridCard extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.4),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
               ),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
-                    'ĐÓNG CỬA',
+                    'HẾT HÀNG',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -180,7 +184,7 @@ class IngredientGridCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 2),
-          
+
           // Shop Name
           if (shopName != null && shopName!.isNotEmpty)
             Text(
@@ -195,7 +199,7 @@ class IngredientGridCard extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 4),
-          
+
           // Price
           if (price != null && price!.isNotEmpty)
             Text(
@@ -207,9 +211,9 @@ class IngredientGridCard extends StatelessWidget {
                 color: Color(0xFFFF3B30),
               ),
             ),
-          
+
           const Spacer(),
-          
+
           // Action Buttons
           Row(
             children: [
@@ -219,7 +223,11 @@ class IngredientGridCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     decoration: BoxDecoration(
-                      border: Border.all(color: isShopOpen ? const Color(0xFF008EDB) : Colors.grey),
+                      border: Border.all(
+                        color: isShopOpen
+                            ? const Color(0xFF008EDB)
+                            : Colors.grey,
+                      ),
                       borderRadius: BorderRadius.circular(4),
                       color: isShopOpen ? Colors.transparent : Colors.grey[100],
                     ),
@@ -230,7 +238,9 @@ class IngredientGridCard extends StatelessWidget {
                         fontFamily: 'Roboto',
                         fontSize: 9,
                         fontWeight: FontWeight.w600,
-                        color: isShopOpen ? const Color(0xFF008EDB) : Colors.grey,
+                        color: isShopOpen
+                            ? const Color(0xFF008EDB)
+                            : Colors.grey,
                       ),
                     ),
                   ),

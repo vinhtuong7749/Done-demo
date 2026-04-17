@@ -5,28 +5,26 @@ import '../cubit/productdetail_cubit.dart';
 import '../cubit/productdetail_state.dart';
 import '../../../../../core/widgets/ingredient_list_item.dart';
 import '../../../../../core/widgets/ingredient_grid_card.dart';
-import '../../../../../core/widgets/shared_bottom_navigation.dart';
 import '../../../../../core/widgets/cart_icon_with_badge.dart';
+import '../../../../../core/widgets/error_state_view.dart';
 import '../../../../../core/config/route_name.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final String? maMonAn; // Mã món ăn từ ProductScreen
 
-  const ProductDetailScreen({
-    super.key,
-    this.maMonAn,
-  });
+  const ProductDetailScreen({super.key, this.maMonAn});
 
   @override
   Widget build(BuildContext context) {
     // Lấy maMonAn từ route arguments nếu không truyền trực tiếp
-    final String finalMaMonAn = maMonAn ?? 
-        (ModalRoute.of(context)?.settings.arguments as String?) ?? 
+    final String finalMaMonAn =
+        maMonAn ??
+        (ModalRoute.of(context)?.settings.arguments as String?) ??
         '';
 
     return BlocProvider(
-      create: (context) => ProductDetailCubit()
-        ..loadProductDetails(finalMaMonAn),
+      create: (context) =>
+          ProductDetailCubit()..loadProductDetails(finalMaMonAn),
       child: const _ProductDetailView(),
     );
   }
@@ -49,32 +47,17 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
       body: BlocBuilder<ProductDetailCubit, ProductDetailState>(
         builder: (context, state) {
           if (state.isLoading) {
-            return const BuyerLoading(
-              message: 'Đang tải chi tiết món ăn...',
-            );
+            return const BuyerLoading(message: 'Đang tải chi tiết món ăn...');
           }
 
           if (state.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    state.errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ProductDetailCubit>().loadProductDetails(state.maMonAn ?? '');
-                    },
-                    child: const Text('Thử lại'),
-                  ),
-                ],
-              ),
+            return AppErrorView(
+              message: state.errorMessage!,
+              onRetry: () {
+                context.read<ProductDetailCubit>().loadProductDetails(
+                  state.maMonAn ?? '',
+                );
+              },
             );
           }
 
@@ -86,11 +69,13 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           );
         },
       ),
-      
     );
   }
 
-  Widget _buildScrollableContent(BuildContext context, ProductDetailState state) {
+  Widget _buildScrollableContent(
+    BuildContext context,
+    ProductDetailState state,
+  ) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,60 +97,59 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
   }
 
   Widget _buildHeader(BuildContext context, ProductDetailState state) {
-  return Positioned(
-    top: 0,
-    left: 0,
-    right: 0,
-    child: Container(
-      height: 91, // Giống header iOS
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withValues(alpha: 0.3),
-            width: 0.8,
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        height: 91, // Giống header iOS
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.grey.withValues(alpha: 0.3),
+              width: 0.8,
+            ),
           ),
         ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              
-              // Nút Back
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: const Icon(
-                  Icons.arrow_back,
-                  size: 22,
-                  color: Colors.black,
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Nút Back
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    size: 22,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
 
-              // Icon giỏ hàng bên phải
-              CartIconWithBadge(
-                itemCount: state.cartItemCount,
-                onTap: () {
-                  Navigator.pushNamed(context, RouteName.cart);
-                },
-              ),
-            ],
+                // Icon giỏ hàng bên phải
+                CartIconWithBadge(
+                  itemCount: state.cartItemCount,
+                  onTap: () {
+                    Navigator.pushNamed(context, RouteName.cart);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildProductImage(ProductDetailState state) {
     // Kiểm tra xem productImage có phải URL không
-    final bool isUrl = state.productImage.startsWith('http://') || 
-                       state.productImage.startsWith('https://');
-    
+    final bool isUrl =
+        state.productImage.startsWith('http://') ||
+        state.productImage.startsWith('https://');
+
     if (isUrl) {
       // Nếu là URL, dùng Image.network()
       return Image.network(
@@ -179,9 +163,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             width: double.infinity,
             height: 308,
             color: Colors.grey[200],
-            child: const Center(
-              child: BuyerLoading(),
-            ),
+            child: const Center(child: BuyerLoading()),
           );
         },
         errorBuilder: (context, error, stackTrace) {
@@ -189,14 +171,20 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             width: double.infinity,
             height: 308,
             color: Colors.grey[300],
-            child: const Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
+            child: const Icon(
+              Icons.image_not_supported,
+              size: 80,
+              color: Colors.grey,
+            ),
           );
         },
       );
     } else {
       // Nếu là asset, dùng Image.asset()
       return Image.asset(
-        state.productImage.isNotEmpty ? state.productImage : 'assets/img/mon_an_icon.png',
+        state.productImage.isNotEmpty
+            ? state.productImage
+            : 'assets/img/mon_an_icon.png',
         width: double.infinity,
         height: 308,
         fit: BoxFit.cover,
@@ -205,7 +193,11 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             width: double.infinity,
             height: 308,
             color: Colors.grey[300],
-            child: const Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
+            child: const Icon(
+              Icons.image_not_supported,
+              size: 80,
+              color: Colors.grey,
+            ),
           );
         },
       );
@@ -249,17 +241,16 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Thông tin cơ bản (luôn hiển thị)
-          if (state.doKho != null)
-            _buildInfoRow('Độ khó', state.doKho!),
+          if (state.doKho != null) _buildInfoRow('Độ khó', state.doKho!),
           if (state.khoangThoiGian != null)
             _buildInfoRow('Thời gian nấu', '${state.khoangThoiGian} phút'),
           if (state.khauPhanTieuChuan != null)
             _buildKhauPhanRow(context, state),
           if (state.calories != null)
             _buildInfoRow('Calories', '${state.calories} Cal'),
-          
+
           const SizedBox(height: 12),
-          
+
           // Nguyên liệu (luôn hiển thị)
           if (state.nguyenLieu != null && state.nguyenLieu!.isNotEmpty) ...[
             const Text(
@@ -281,13 +272,13 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             }),
             const SizedBox(height: 12),
           ],
-          
+
           // Phần chi tiết (chỉ hiển thị khi mở rộng)
           AnimatedCrossFade(
             firstChild: const SizedBox.shrink(),
             secondChild: _buildExpandedContent(state),
-            crossFadeState: _isExpanded 
-                ? CrossFadeState.showSecond 
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
@@ -295,7 +286,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
       ),
     );
   }
-  
+
   Widget _buildExpandedContent(ProductDetailState state) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,7 +314,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           ),
           const SizedBox(height: 12),
         ],
-        
+
         // Cách thực hiện
         if (state.cachThucHien != null && state.cachThucHien!.isNotEmpty) ...[
           const Text(
@@ -347,7 +338,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           ),
           const SizedBox(height: 12),
         ],
-        
+
         // Cách dùng
         if (state.cachDung != null && state.cachDung!.isNotEmpty) ...[
           const Text(
@@ -371,7 +362,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
           ),
           const SizedBox(height: 12),
         ],
-        
+
         // Danh mục
         if (state.danhMuc != null && state.danhMuc!.isNotEmpty) ...[
           const Text(
@@ -389,7 +380,10 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
             runSpacing: 8,
             children: state.danhMuc!.map((dm) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8F5E9),
                   borderRadius: BorderRadius.circular(16),
@@ -410,7 +404,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
       ],
     );
   }
-  
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -472,16 +466,16 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: state.currentKhauPhan > 1 
-                        ? const Color(0xFF2F8000) 
+                    color: state.currentKhauPhan > 1
+                        ? const Color(0xFF2F8000)
                         : Colors.grey[300],
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
                     Icons.remove,
                     size: 16,
-                    color: state.currentKhauPhan > 1 
-                        ? Colors.white 
+                    color: state.currentKhauPhan > 1
+                        ? Colors.white
                         : Colors.grey[500],
                   ),
                 ),
@@ -514,11 +508,7 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
                     color: const Color(0xFF2F8000),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Icon(
-                    Icons.add,
-                    size: 16,
-                    color: Colors.white,
-                  ),
+                  child: const Icon(Icons.add, size: 16, color: Colors.white),
                 ),
               ),
               const SizedBox(width: 8),
@@ -575,85 +565,52 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
   }
 
   Widget _buildRelatedProductsTitle(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'Nguyên liệu cần mua',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              height: 1.21,
-              color: Color(0xFF020202),
-            ),
-          ),
-          BlocBuilder<ProductDetailCubit, ProductDetailState>(
-            builder: (context, state) {
-              // Chỉ hiển thị nút nếu có nguyên liệu
-              if (state.nguyenLieu == null || state.nguyenLieu!.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return GestureDetector(
-                onTap: () => _addAllToCart(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2F8000),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_shopping_cart, size: 14, color: Colors.white),
-                      SizedBox(width: 4),
-                      Text(
-                        'Thêm tất cả',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: Text(
+        'Nguyên liệu cần mua',
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          height: 1.21,
+          color: Color(0xFF020202),
+        ),
       ),
     );
   }
 
-  Future<void> _addAllToCart(BuildContext context) async {
-    // Hiển thị loading
+  Future<void> _addAllToCart(
+    BuildContext context,
+    List<NguyenLieuInfo> items,
+    String sectionLabel,
+  ) async {
+    if (items.isEmpty) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const BuyerLoading(
-              message: 'Đang thêm nguyên liệu vào giỏ hàng...',
-            ),
+      builder: (context) =>
+          BuyerLoading(message: 'Đang thêm $sectionLabel vào giỏ hàng...'),
     );
 
     try {
-      final result = await context.read<ProductDetailCubit>().addAllIngredientsToCart();
-      
-      // Đóng loading
+      final result = await context
+          .read<ProductDetailCubit>()
+          .addAllIngredientsToCart(items: items);
+
       if (context.mounted) Navigator.pop(context);
 
-      // Hiển thị kết quả
       if (context.mounted) {
+        final label = sectionLabel.toLowerCase();
         String message;
         if (result.success > 0 && result.failed == 0) {
-          message = 'Đã thêm ${result.success} nguyên liệu vào giỏ hàng';
+          message = 'Đã thêm ${result.success} $label vào giỏ hàng';
         } else if (result.success > 0 && result.failed > 0) {
-          message = 'Đã thêm ${result.success} nguyên liệu, ${result.failed} thất bại';
+          message =
+              'Đã thêm ${result.success} $label, ${result.failed} mục thất bại';
         } else {
-          message = 'Không thể thêm nguyên liệu vào giỏ hàng';
+          message = 'Không thể thêm $label vào giỏ hàng';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -665,15 +622,11 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
         );
       }
     } catch (e) {
-      // Đóng loading
       if (context.mounted) Navigator.pop(context);
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -682,84 +635,170 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
   Widget _buildRelatedProducts(BuildContext context) {
     return BlocBuilder<ProductDetailCubit, ProductDetailState>(
       builder: (context, state) {
-        // Nếu không có nguyên liệu, không hiển thị gì
         if (state.nguyenLieu == null || state.nguyenLieu!.isEmpty) {
           return const SizedBox.shrink();
         }
 
+        final nguyenLieuCanMua = state.nguyenLieu!
+            .where((item) => !item.isGiaVi)
+            .toList();
+        final giaViCanMua = state.nguyenLieu!
+            .where((item) => item.isGiaVi)
+            .toList();
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 0.75,
-            ),
-            itemCount: state.nguyenLieu!.length,
-            itemBuilder: (context, index) {
-              final nl = state.nguyenLieu![index];
-              final gianHang = nl.gianHang?.isNotEmpty == true ? nl.gianHang!.first : null;
-              final isShopOpen = gianHang?.isMoCua ?? true;
-
-              return IngredientGridCard(
-                name: nl.ten,
-                price: nl.giaDisplay ?? (nl.dinhLuong.isNotEmpty && nl.donVi != null
-                    ? '${nl.dinhLuong} ${nl.donVi}'
-                    : null),
-                imagePath: nl.hinhAnh,
-                shopName: gianHang?.tenGianHang,
-                isShopOpen: isShopOpen,
-                onTap: () {
-                  // Navigate to ingredient detail
-                  if (nl.maNguyenLieu != null) {
-                    Navigator.pushNamed(
-                      context,
-                      '/ingredient-detail',
-                      arguments: {
-                        'maNguyenLieu': nl.maNguyenLieu,
-                        'ingredientName': nl.ten,
-                      },
-                    );
-                  }
-                },
-                onAddToCart: () async {
-                  final success = await context.read<ProductDetailCubit>().addToCartIngredient(nl);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(success 
-                          ? 'Đã thêm ${nl.ten} vào giỏ hàng' 
-                          : 'Không thể thêm ${nl.ten} vào giỏ hàng'),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  }
-                },
-                onBuyNow: () {
-                  // Navigate to ingredient detail for buying
-                  if (nl.maNguyenLieu != null) {
-                    Navigator.pushNamed(
-                      context,
-                      '/ingredient-detail',
-                      arguments: {
-                        'maNguyenLieu': nl.maNguyenLieu,
-                        'ingredientName': nl.ten,
-                      },
-                    );
-                  }
-                },
-              );
-            },
+          child: Column(
+            children: [
+              if (nguyenLieuCanMua.isNotEmpty)
+                _buildIngredientSection(
+                  context,
+                  title: 'Nguyên liệu',
+                  items: nguyenLieuCanMua,
+                ),
+              if (giaViCanMua.isNotEmpty)
+                _buildIngredientSection(
+                  context,
+                  title: 'Gia vị cần mua',
+                  items: giaViCanMua,
+                ),
+            ],
           ),
         );
       },
     );
   }
 
+  Widget _buildIngredientSection(
+    BuildContext context, {
+    required String title,
+    required List<NguyenLieuInfo> items,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            GestureDetector(
+              onTap: () => _addAllToCart(context, items, title),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2F8000),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_shopping_cart,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      'Thêm tất cả',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.75,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final nl = items[index];
+            final gianHang = nl.preferredGianHang;
+            final isAvailable = nl.hasAvailableShop;
+
+            return IngredientGridCard(
+              name: nl.ten,
+              price:
+                  nl.giaDisplay ??
+                  (nl.dinhLuong.isNotEmpty ? nl.dinhLuong : null),
+              imagePath: nl.hinhAnh,
+              shopName: gianHang?.tenGianHang ?? 'Không có gian hàng hoạt động',
+              isShopOpen: isAvailable,
+              onTap: () {
+                if (nl.maNguyenLieu != null) {
+                  Navigator.pushNamed(
+                    context,
+                    '/ingredient-detail',
+                    arguments: {
+                      'maNguyenLieu': nl.maNguyenLieu,
+                      'ingredientName': nl.ten,
+                    },
+                  );
+                }
+              },
+              onAddToCart: () async {
+                final success = await context
+                    .read<ProductDetailCubit>()
+                    .addToCartIngredient(nl);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'Đã thêm ${nl.ten} vào giỏ hàng'
+                            : 'Không thể thêm ${nl.ten} vào giỏ hàng',
+                      ),
+                      backgroundColor: success ? Colors.green : Colors.red,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              onBuyNow: () {
+                if (nl.maNguyenLieu != null) {
+                  Navigator.pushNamed(
+                    context,
+                    '/ingredient-detail',
+                    arguments: {
+                      'maNguyenLieu': nl.maNguyenLieu,
+                      'ingredientName': nl.ten,
+                    },
+                  );
+                }
+              },
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildReviewSection(ProductDetailState state) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -892,6 +931,4 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
       ),
     );
   }
-
-
 }

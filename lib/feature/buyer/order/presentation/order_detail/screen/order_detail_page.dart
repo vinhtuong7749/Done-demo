@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../cubit/order_detail_cubit.dart';
+import '../../../../../../core/config/route_name.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/services/order_service.dart';
 import '../../../../../../core/services/review_api_service.dart';
@@ -445,8 +446,14 @@ class _OrderDetailViewState extends State<OrderDetailView> {
                   
                   const Spacer(),
                   
-                  // Placeholder to balance
-                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, RouteName.chat),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      size: 20,
+                      color: Color(0xFF00B40F),
+                    ),
+                  ),
                 ],
               ),
               
@@ -1016,6 +1023,17 @@ class _OrderDetailViewState extends State<OrderDetailView> {
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                       color: Color(0xFF2F8000),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  GestureDetector(
+                    onTap: () => Navigator.pushNamed(context, RouteName.chat),
+                    child: const Icon(
+                      Icons.chat_bubble_outline,
+                      size: 20,
+                      color: Color(0xFF00B40F),
                     ),
                   ),
                 ],

@@ -76,9 +76,44 @@ class HomeCubit extends Cubit<HomeState> {
           return MonAnSuggestion(
             maMonAn: (dish.raw['dish_id'] ?? dish.raw['ma_mon_an'] ?? '').toString(),
             tenMonAn: dish.title,
-            hinhAnh: (dish.raw['image'] ?? dish.raw['hinh_anh'] ?? '').toString(),
+            hinhAnh: (dish.raw['image_url'] ?? dish.raw['image'] ?? dish.raw['hinh_anh'] ?? '').toString(),
           );
         }).toList();
+      }
+
+      // Map LLM shops to GianHangSuggestion
+      List<GianHangSuggestion>? gianHangSuggestions;
+      if (response.shops.isNotEmpty) {
+        gianHangSuggestions = response.shops.map((shop) {
+          final goodsList = (shop.raw['goods'] as List<dynamic>? ?? []).map((good) {
+            return HangHoa(
+              tenNguyenLieu: (good['ingredient_name'] ?? '').toString(),
+              hinhAnh: (good['good_image'] ?? good['image'])?.toString(),
+              gia: (good['price'] ?? 0.0).toDouble(),
+              donVi: (good['unit'] ?? '').toString(),
+              tonKho: (good['inventory'] ?? 0.0).toDouble(),
+              giamGia: (good['discount'] ?? 0.0).toDouble(),
+            );
+          }).toList();
+
+          return GianHangSuggestion(
+            maGianHang: (shop.raw['stall_id'] ?? shop.raw['ma_gian_hang'] ?? '').toString(),
+            tenGianHang: shop.name,
+            hinhAnh: (shop.raw['stall_image'] ?? shop.raw['hinh_anh'])?.toString(),
+            viTri: shop.location ?? '',
+            rating: (shop.raw['avr_rating'] ?? 0.0).toDouble(),
+            hangHoa: goodsList,
+            tongSoHang: (shop.raw['total_goods'] ?? goodsList.length).toInt(),
+          );
+        }).toList();
+      }
+
+      // Determine response type
+      String responseType = 'text';
+      if (response.shops.isNotEmpty) {
+        responseType = 'shop_suggestions';
+      } else if (response.dishes.isNotEmpty) {
+        responseType = 'suggestions';
       }
 
       // Create bot message
@@ -88,8 +123,9 @@ class HomeCubit extends Cubit<HomeState> {
             : 'Mình chưa có dữ liệu phù hợp, bạn thử nói rõ hơn nhé.',
         isBot: true,
         timestamp: DateTime.now(),
-        responseType: response.dishes.isNotEmpty ? 'suggestions' : 'text',
+        responseType: responseType,
         monAnSuggestions: monAnSuggestions,
+        gianHangSuggestions: gianHangSuggestions,
         hint: response.shops.isNotEmpty
             ? 'Tìm thấy ${response.shops.length} gian hàng'
             : null,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../config/route_name.dart';
 import '../utils/app_logger.dart';
 import 'app_exception.dart';
 
@@ -76,6 +77,15 @@ class ErrorHandler {
               },
               child: const Text('Thử lại'),
             ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(RouteName.main, (route) => false);
+            },
+            child: const Text('Về trang chủ'),
+          ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Đóng'),

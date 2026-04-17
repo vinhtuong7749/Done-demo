@@ -98,8 +98,8 @@ class IngredientDetailState extends Equatable {
       shopName: shopName ?? this.shopName,
       description: description ?? this.description,
       sellers: sellers ?? this.sellers,
-      selectedSeller: selectedSeller == _undefined 
-          ? this.selectedSeller 
+      selectedSeller: selectedSeller == _undefined
+          ? this.selectedSeller
           : selectedSeller as Seller?,
       quantity: quantity ?? this.quantity,
       relatedProducts: relatedProducts ?? this.relatedProducts,
@@ -121,33 +121,33 @@ class IngredientDetailState extends Equatable {
 
   @override
   List<Object?> get props => [
-        maNguyenLieu,
-        ingredientName,
-        ingredientImage,
-        price,
-        unit,
-        rating,
-        soldCount,
-        shopName,
-        description,
-        sellers,
-        selectedSeller,
-        quantity,
-        relatedProducts,
-        recommendedProducts,
-        cartItemCount,
-        isFavorite,
-        isLoading,
-        errorMessage,
-        // Reviews
-        reviews,
-        totalReviews,
-        avgRating,
-        isLoadingReviews,
-        isAddingToCart,
-        lastCartActionMessage,
-        lastCartActionSuccess,
-      ];
+    maNguyenLieu,
+    ingredientName,
+    ingredientImage,
+    price,
+    unit,
+    rating,
+    soldCount,
+    shopName,
+    description,
+    sellers,
+    selectedSeller,
+    quantity,
+    relatedProducts,
+    recommendedProducts,
+    cartItemCount,
+    isFavorite,
+    isLoading,
+    errorMessage,
+    // Reviews
+    reviews,
+    totalReviews,
+    avgRating,
+    isLoadingReviews,
+    isAddingToCart,
+    lastCartActionMessage,
+    lastCartActionSuccess,
+  ];
 }
 
 // Sentinel value để phân biệt "không truyền" vs "truyền null"
@@ -185,19 +185,21 @@ class Seller extends Equatable {
   /// Kiểm tra gian hàng có đang mở cửa không
   bool get isMoCua => tinhTrang == 'dang_mo_cua';
 
+  bool get isAvailable => isMoCua && conHang;
+
   @override
   List<Object?> get props => [
-        maGianHang,
-        tenGianHang,
-        viTri,
-        price,
-        originalPrice,
-        hasDiscount,
-        imagePath,
-        soLuongBan,
-        unit,
-        tinhTrang,
-      ];
+    maGianHang,
+    tenGianHang,
+    viTri,
+    price,
+    originalPrice,
+    hasDiscount,
+    imagePath,
+    soLuongBan,
+    unit,
+    tinhTrang,
+  ];
 }
 
 /// Model cho sản phẩm liên quan
@@ -221,5 +223,13 @@ class RelatedProduct extends Equatable {
   });
 
   @override
-  List<Object?> get props => [maNguyenLieu, name, price, imagePath, shopName, soldCount, unit];
+  List<Object?> get props => [
+    maNguyenLieu,
+    name,
+    price,
+    imagePath,
+    shopName,
+    soldCount,
+    unit,
+  ];
 }

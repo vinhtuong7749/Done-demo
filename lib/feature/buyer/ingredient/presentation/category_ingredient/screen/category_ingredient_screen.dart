@@ -5,6 +5,7 @@ import '../cubit/category_ingredient_state.dart';
 import '../../../../../../core/widgets/ingredient_card.dart';
 import '../../../../../../core/widgets/buyer_loading.dart';
 import '../../../../../../core/widgets/cart_badge_icon.dart';
+import '../../../../../../core/widgets/error_state_view.dart';
 
 class CategoryIngredientScreen extends StatelessWidget {
   final String categoryId;
@@ -19,8 +20,9 @@ class CategoryIngredientScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => CategoryIngredientCubit()
-        ..loadIngredientsByCategory(categoryId, categoryName),
+      create: (context) =>
+          CategoryIngredientCubit()
+            ..loadIngredientsByCategory(categoryId, categoryName),
       child: const _CategoryIngredientView(),
     );
   }
@@ -30,7 +32,8 @@ class _CategoryIngredientView extends StatefulWidget {
   const _CategoryIngredientView();
 
   @override
-  State<_CategoryIngredientView> createState() => _CategoryIngredientViewState();
+  State<_CategoryIngredientView> createState() =>
+      _CategoryIngredientViewState();
 }
 
 class _CategoryIngredientViewState extends State<_CategoryIngredientView> {
@@ -112,40 +115,14 @@ class _CategoryIngredientViewState extends State<_CategoryIngredientView> {
         },
       ),
       centerTitle: true,
-      actions: const [
-        CartBadgeIcon(iconSize: 24),
-        SizedBox(width: 16),
-      ],
+      actions: const [CartBadgeIcon(iconSize: 24), SizedBox(width: 16)],
     );
   }
 
   Widget _buildErrorView(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => context.read<CategoryIngredientCubit>().refresh(),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Thử lại'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B40F),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
+    return AppErrorView(
+      message: message,
+      onRetry: () => context.read<CategoryIngredientCubit>().refresh(),
     );
   }
 
@@ -162,11 +139,8 @@ class _CategoryIngredientViewState extends State<_CategoryIngredientView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 16),
         itemCount: state.ingredients.length + (state.isLoadingMore ? 1 : 0),
-        separatorBuilder: (context, index) => const Divider(
-          height: 1,
-          thickness: 0.7,
-          color: Color(0x2E5E5C5C),
-        ),
+        separatorBuilder: (context, index) =>
+            const Divider(height: 1, thickness: 0.7, color: Color(0x2E5E5C5C)),
         itemBuilder: (context, index) {
           if (index >= state.ingredients.length) {
             return const Padding(
@@ -192,21 +166,25 @@ class _CategoryIngredientViewState extends State<_CategoryIngredientView> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_basket_outlined, size: 64, color: Colors.grey[300]),
+          Icon(
+            Icons.shopping_basket_outlined,
+            size: 64,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
           Text(
             'Không có nguyên liệu nào',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIngredientItem(BuildContext context, CategoryIngredientItem ingredient) {
+  Widget _buildIngredientItem(
+    BuildContext context,
+    CategoryIngredientItem ingredient,
+  ) {
     void navigateToDetail() {
       Navigator.pushNamed(
         context,

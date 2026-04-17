@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../../core/widgets/buyer_loading.dart';
+import '../../../../../core/config/route_name.dart';
 import '../cubit/order_cubit.dart';
 import '../cubit/order_state.dart';
 
@@ -97,6 +98,11 @@ class _SellerOrderViewState extends State<SellerOrderView> {
               'Đơn hàng của tôi',
               style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 20, color: Color(0xFF1F2937)),
             ),
+          ),
+          IconButton(
+            onPressed: () => Navigator.pushNamed(context, RouteName.chat),
+            icon: const Icon(Icons.chat_bubble_outline, size: 24),
+            color: const Color(0xFF1F2937),
           ),
           IconButton(onPressed: () {}, icon: const Icon(Icons.search, size: 24), color: const Color(0xFF1F2937)),
           IconButton(onPressed: () {}, icon: const Icon(Icons.tune, size: 24), color: const Color(0xFF1F2937)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/config/route_name.dart';
+import '../../../../core/widgets/error_state_view.dart';
 import '../cubit/chat_inbox_cubit.dart';
 
 class ChatHubScreen extends StatelessWidget {
@@ -10,9 +11,7 @@ class ChatHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tin nhắn với người bán'),
-      ),
+      appBar: AppBar(title: const Text('Tin nhắn với người bán')),
       body: const _BuyerSellerTab(),
     );
   }
@@ -40,13 +39,12 @@ class _BuyerSellerTab extends StatelessWidget {
 
           if (state.conversations.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () => context.read<ChatInboxCubit>().loadConversations(),
+              onRefresh: () =>
+                  context.read<ChatInboxCubit>().loadConversations(),
               child: ListView(
                 children: const [
                   SizedBox(height: 120),
-                  Center(
-                    child: Text('Chưa có cuộc trò chuyện nào'),
-                  ),
+                  Center(child: Text('Chưa có cuộc trò chuyện nào')),
                 ],
               ),
             );
@@ -95,14 +93,20 @@ class _BuyerSellerTab extends StatelessWidget {
                   ),
                   trailing: conversation.unread > 0
                       ? Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
                             '${conversation.unread}',
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
                           ),
                         )
                       : const Icon(Icons.chevron_right),
@@ -130,31 +134,10 @@ class _ChatErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
 
-  const _ChatErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _ChatErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              message,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: onRetry,
-              child: const Text('Thử lại'),
-            ),
-          ],
-        ),
-      ),
-    );
+    return AppErrorView(message: message, onRetry: onRetry);
   }
 }

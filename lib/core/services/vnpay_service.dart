@@ -5,8 +5,8 @@ import 'auth/simple_auth_helper.dart';
 
 /// Service để xử lý thanh toán VNPay
 class VNPayService {
-  // baseUrl cho vnpay nằm ở root không nằm trong /api hay /api/payment
-  static const String _baseUrl = 'http://207.180.233.84:8000';
+  // baseUrl cho vnpay nằm ở root nên dùng imageBaseUrl thay vì baseUrl (/api)
+  static const String _baseUrl = AppConfig.imageBaseUrl;
 
   /// Get order status để check kết quả thanh toán
   Future<OrderStatusResponse> getOrderStatus(String maDonHang) async {

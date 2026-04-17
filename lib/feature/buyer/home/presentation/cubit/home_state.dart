@@ -69,10 +69,11 @@ class ChatMessage extends Equatable {
   final String message;
   final bool isBot;
   final DateTime timestamp;
-  final String? responseType; // 'text', 'menu_selection', 'suggestions', 'menu_detail'
+  final String? responseType; // 'text', 'menu_selection', 'suggestions', 'menu_detail', 'shop_suggestions'
   final List<ChatOption>? options;
   final List<MonAnSuggestion>? monAnSuggestions;
   final List<NguyenLieuSuggestion>? nguyenLieuSuggestions;
+  final List<GianHangSuggestion>? gianHangSuggestions;
   final List<MenuSelection>? menus; // Menu selection
   final SelectedMenuDetail? selectedMenu; // Menu detail after selection
   final String? hint;
@@ -85,6 +86,7 @@ class ChatMessage extends Equatable {
     this.options,
     this.monAnSuggestions,
     this.nguyenLieuSuggestions,
+    this.gianHangSuggestions,
     this.menus,
     this.selectedMenu,
     this.hint,
@@ -99,6 +101,7 @@ class ChatMessage extends Equatable {
         options,
         monAnSuggestions,
         nguyenLieuSuggestions,
+        gianHangSuggestions,
         menus,
         selectedMenu,
         hint,
@@ -165,6 +168,88 @@ class GianHangSuggest extends Equatable {
 
   @override
   List<Object?> get props => [maGianHang, tenGianHang, viTri, gia, donViBan, soLuong];
+}
+
+/// Model cho gian hàng suggestion từ AI (search_shop intent)
+class GianHangSuggestion extends Equatable {
+  final String maGianHang;
+  final String tenGianHang;
+  final String? hinhAnh;
+  final String viTri;
+  final double rating;
+  final List<HangHoa> hangHoa;
+  final int tongSoHang;
+
+  const GianHangSuggestion({
+    required this.maGianHang,
+    required this.tenGianHang,
+    this.hinhAnh,
+    required this.viTri,
+    required this.rating,
+    required this.hangHoa,
+    required this.tongSoHang,
+  });
+
+  /// Convert to list of ShopProduct để hiển thị trực tiếp
+  List<ShopProductPreview> toShopProducts() {
+    return hangHoa.map((h) {
+      return ShopProductPreview(
+        productName: h.tenNguyenLieu,
+        productImage: h.hinhAnh,
+        price: h.gia,
+        unit: h.donVi,
+        inventory: h.tonKho,
+        discountPercent: h.giamGia,
+      );
+    }).toList();
+  }
+
+  @override
+  List<Object?> get props => [maGianHang, tenGianHang, hinhAnh, viTri, rating, hangHoa, tongSoHang];
+}
+
+/// Model preview cho sản phẩm đề xuất (từ chatbot)
+class ShopProductPreview extends Equatable {
+  final String productName;
+  final String? productImage;
+  final double price;
+  final String unit;
+  final double inventory;
+  final double discountPercent;
+
+  const ShopProductPreview({
+    required this.productName,
+    this.productImage,
+    required this.price,
+    required this.unit,
+    required this.inventory,
+    required this.discountPercent,
+  });
+
+  @override
+  List<Object?> get props => [productName, productImage, price, unit, inventory, discountPercent];
+}
+
+/// Model cho hàng hóa trong gian hàng
+class HangHoa extends Equatable {
+  final String tenNguyenLieu;
+  final String? hinhAnh;
+  final double gia;
+  final String donVi;
+  final double tonKho;
+  final double giamGia;
+
+  const HangHoa({
+    required this.tenNguyenLieu,
+    this.hinhAnh,
+    required this.gia,
+    required this.donVi,
+    required this.tonKho,
+    required this.giamGia,
+  });
+
+  @override
+  List<Object?> get props => [tenNguyenLieu, hinhAnh, gia, donVi, tonKho, giamGia];
 }
 
 /// Model cho các lựa chọn trong chat

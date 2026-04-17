@@ -17,7 +17,7 @@ class ProductDetailState extends Equatable {
   final bool isFavorite;
   final bool isLoading;
   final String? errorMessage;
-  
+
   // Thông tin chi tiết món ăn từ API
   final String? doKho;
   final int? khoangThoiGian;
@@ -116,32 +116,32 @@ class ProductDetailState extends Equatable {
 
   @override
   List<Object?> get props => [
-        maMonAn,
-        productName,
-        productImage,
-        price,
-        priceUnit,
-        rating,
-        soldCount,
-        shopName,
-        category,
-        description,
-        reviews,
-        cartItemCount,
-        isFavorite,
-        isLoading,
-        errorMessage,
-        doKho,
-        khoangThoiGian,
-        khauPhanTieuChuan,
-        currentKhauPhan,
-        calories,
-        cachThucHien,
-        soChe,
-        cachDung,
-        nguyenLieu,
-        danhMuc,
-      ];
+    maMonAn,
+    productName,
+    productImage,
+    price,
+    priceUnit,
+    rating,
+    soldCount,
+    shopName,
+    category,
+    description,
+    reviews,
+    cartItemCount,
+    isFavorite,
+    isLoading,
+    errorMessage,
+    doKho,
+    khoangThoiGian,
+    khauPhanTieuChuan,
+    currentKhauPhan,
+    calories,
+    cachThucHien,
+    soChe,
+    cachDung,
+    nguyenLieu,
+    danhMuc,
+  ];
 }
 
 /// Model cho thông tin nguyên liệu
@@ -153,6 +153,7 @@ class NguyenLieuInfo extends Equatable {
   final String? hinhAnh;
   final double? gia;
   final String? donViBan;
+  final String? nhomNguyenLieu;
   final List<GianHangSimple>? gianHang; // Danh sách gian hàng
 
   const NguyenLieuInfo({
@@ -163,21 +164,55 @@ class NguyenLieuInfo extends Equatable {
     this.hinhAnh,
     this.gia,
     this.donViBan,
+    this.nhomNguyenLieu,
     this.gianHang,
   });
 
   /// Format giá hiển thị
   String? get giaDisplay {
     if (gia == null) return null;
-    final formatted = gia!.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    );
+    final formatted = gia!
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
     return '$formattedđ${donViBan != null ? '/$donViBan' : ''}';
   }
 
+  bool get isGiaVi {
+    final normalized = '${nhomNguyenLieu ?? ''} ${donVi ?? ''}'
+        .toLowerCase()
+        .trim();
+    return normalized.contains('gia vị') || normalized.contains('gia vi');
+  }
+
+  GianHangSimple? get preferredGianHang {
+    if (gianHang == null || gianHang!.isEmpty) return null;
+
+    for (final item in gianHang!) {
+      if (item.isAvailable) return item;
+    }
+    for (final item in gianHang!) {
+      if (item.isMoCua) return item;
+    }
+    return gianHang!.first;
+  }
+
+  bool get hasAvailableShop => preferredGianHang?.isAvailable ?? false;
+
   @override
-  List<Object?> get props => [maNguyenLieu, ten, dinhLuong, donVi, hinhAnh, gia, donViBan, gianHang];
+  List<Object?> get props => [
+    maNguyenLieu,
+    ten,
+    dinhLuong,
+    donVi,
+    hinhAnh,
+    gia,
+    donViBan,
+    nhomNguyenLieu,
+    gianHang,
+  ];
 }
 
 /// Model đơn giản cho gian hàng
@@ -186,19 +221,32 @@ class GianHangSimple extends Equatable {
   final String? tenGianHang;
   final String? maCho;
   final String? tinhTrang;
+  final int? soLuongBan;
 
   const GianHangSimple({
     this.maGianHang,
     this.tenGianHang,
     this.maCho,
     this.tinhTrang,
+    this.soLuongBan,
   });
 
   /// Kiểm tra gian hàng có đang mở cửa không
   bool get isMoCua => tinhTrang == 'dang_mo_cua' || tinhTrang == null;
 
+  /// Nếu API không trả tồn kho thì xem như chưa rõ và vẫn cho phép hiển thị
+  bool get conHang => soLuongBan == null || soLuongBan! > 0;
+
+  bool get isAvailable => isMoCua && conHang;
+
   @override
-  List<Object?> get props => [maGianHang, tenGianHang, maCho, tinhTrang];
+  List<Object?> get props => [
+    maGianHang,
+    tenGianHang,
+    maCho,
+    tinhTrang,
+    soLuongBan,
+  ];
 }
 
 /// Kết quả thêm tất cả nguyên liệu vào giỏ hàng

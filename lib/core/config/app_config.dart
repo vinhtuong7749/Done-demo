@@ -13,14 +13,30 @@ class AppConfig {
   );
 
   // --- API Configuration (Cập nhật sang DNGO) ---
-  // Base URL chính của server
+  // Base URL chính (mặc định local)
   static const String baseUrl = String.fromEnvironment(
     'BASE_URL',
-    defaultValue: 'http://207.180.233.84:8000/api',
+    defaultValue: 'http://127.0.0.1:8000/api',
   );
 
-  // Base URL cho hình ảnh (Domain chính)
-  static const String imageBaseUrl = 'http://207.180.233.84';
+  // Standalone LLM chatbot API (khong di qua DNGO-fastapi)
+  static const String llmBaseUrl = String.fromEnvironment(
+    'LLM_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8001',
+  );
+  static const String llmChatEndpoint = '/chat';
+
+  // WebSocket endpoint cho chat buyer-seller realtime
+  static const String chatWebSocketBaseUrl = String.fromEnvironment(
+    'CHAT_WS_BASE_URL',
+    defaultValue: 'ws://127.0.0.1:8000/api/chat/ws',
+  );
+
+  // Base URL cho hình ảnh (mặc định local backend)
+  static const String imageBaseUrl = String.fromEnvironment(
+    'IMAGE_BASE_URL',
+    defaultValue: 'http://127.0.0.1:8000',
+  );
 
   // Định nghĩa các Base URL theo Role (Dựa trên tài liệu hướng dẫn cập nhật)
   static const String authBaseUrl = '$baseUrl/auth';

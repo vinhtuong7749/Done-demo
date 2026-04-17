@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../config/app_config.dart';
 
 /// Model cho đơn hàng của seller từ API
 class SellerOrderModel {
@@ -221,8 +222,7 @@ class OrderDetailItem {
     if (value == null || value.toString().isEmpty) return null;
     final path = value.toString();
     if (path.startsWith('http')) return path;
-    
-    final baseUrl = 'http://207.180.233.84:8000'; // Standard base URL for images
+    final baseUrl = AppConfig.imageBaseUrl;
     return '$baseUrl${path.startsWith('/') ? '' : '/'}$path';
   }
 }

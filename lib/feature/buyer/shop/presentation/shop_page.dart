@@ -1,28 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/widgets/buyer_loading.dart';
-import 'shop_cubit.dart';
+import '../../../../core/widgets/ingredient_grid_card.dart';
+import '../../../../core/widgets/error_state_view.dart';
 import '../../../../core/utils/price_formatter.dart';
 import '../../../../core/config/route_name.dart';
-import '../../../../core/widgets/ingredient_grid_card.dart';
+import '../../../../core/services/chat_service.dart';
+import '../../../../core/dependency/injection.dart';
+import '../../../buyer/home/presentation/cubit/home_state.dart';
+import 'shop_cubit.dart';
 
 class ShopPage extends StatefulWidget {
   final String shopId;
+  final List<ShopProductPreview>? suggestedProducts;
 
-  const ShopPage({
-    super.key,
-    required this.shopId,
-  });
+  const ShopPage({super.key, required this.shopId, this.suggestedProducts});
 
   @override
   State<ShopPage> createState() => _ShopPageState();
 }
 
 class _ShopPageState extends State<ShopPage> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
-    context.read<ShopCubit>().loadShop(widget.shopId);
+    context.read<ShopCubit>().loadShop(
+      widget.shopId,
+      suggestedProducts: widget.suggestedProducts,
+    );
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      // Khi scroll đến 80% cuối trang, tải thêm
+      context.read<ShopCubit>().loadMore();
+    }
+  }
+
+  /// Kiểm tra xem sản phẩm có phải là đề xuất không
+  bool _isProductSuggested(String productName) {
+    if (widget.suggestedProducts == null || widget.suggestedProducts!.isEmpty) {
+      return false;
+    }
+    final normalizedName = productName.toLowerCase().trim().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+    return widget.suggestedProducts!.any(
+      (sp) =>
+          sp.productName.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ') ==
+          normalizedName,
+    );
   }
 
   @override
@@ -32,34 +70,33 @@ class _ShopPageState extends State<ShopPage> {
       body: BlocBuilder<ShopCubit, ShopState>(
         builder: (context, state) {
           if (state is ShopLoading) {
-            
-              return const BuyerLoading(
-              message: 'Đang tải gian hàng...',
-            );
-
+            return const BuyerLoading(message: 'Đang tải gian hàng...');
           }
 
           if (state is ShopFailure) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(state.errorMessage, textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () =>
-                        context.read<ShopCubit>().loadShop(widget.shopId),
-                    child: const Text('Thử lại'),
-                  ),
-                ],
-              ),
+            return AppErrorView(
+              message: state.errorMessage,
+              onRetry: () => context.read<ShopCubit>().loadShop(widget.shopId),
             );
           }
 
+          // Handle both ShopLoaded and ShopLoadingMore states
           if (state is ShopLoaded) {
             return _buildShopPage(context, state);
+          }
+
+          if (state is ShopLoadingMore) {
+            // Show shop page with current products while loading more
+            return _buildShopPage(
+              context,
+              ShopLoaded(
+                shopInfo: state.shopInfo,
+                products: state.products,
+                selectedTabIndex: state.selectedTabIndex,
+                hasMore: true,
+                currentPage: 0,
+              ),
+            );
           }
 
           return const SizedBox.shrink();
@@ -70,6 +107,7 @@ class _ShopPageState extends State<ShopPage> {
 
   Widget _buildShopPage(BuildContext context, ShopLoaded state) {
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         // App bar
         SliverAppBar(
@@ -90,6 +128,10 @@ class _ShopPageState extends State<ShopPage> {
           ),
           actions: [
             IconButton(
+              icon: const Icon(Icons.chat_bubble_outline, color: Colors.black),
+              onPressed: () => _openChatWithShop(context, state.shopInfo),
+            ),
+            IconButton(
               icon: const Icon(Icons.share_outlined, color: Colors.black),
               onPressed: () {},
             ),
@@ -97,9 +139,7 @@ class _ShopPageState extends State<ShopPage> {
         ),
 
         // Shop header với banner và avatar
-        SliverToBoxAdapter(
-          child: _buildShopHeader(context, state.shopInfo),
-        ),
+        SliverToBoxAdapter(child: _buildShopHeader(context, state.shopInfo)),
 
         // Shop info section
         SliverToBoxAdapter(
@@ -107,16 +147,45 @@ class _ShopPageState extends State<ShopPage> {
         ),
 
         // Products section title
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Sản phẩm',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF202020),
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                const Text(
+                  'Sản phẩm',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF202020),
+                  ),
+                ),
+                if (widget.suggestedProducts != null &&
+                    widget.suggestedProducts!.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF00B40F),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      '${widget.suggestedProducts!.length} đề xuất',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF00B40F),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -131,67 +200,140 @@ class _ShopPageState extends State<ShopPage> {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final product = state.products[index];
-                return IngredientGridCard(
-                  name: product.productName,
-                  price: PriceFormatter.formatPrice(product.price),
-                  imagePath: product.productImage,
-                  onTap: () {
-                    Navigator.pushNamed(
-                      context,
-                      RouteName.ingredientDetail,
-                      arguments: {
-                        'maNguyenLieu': product.productId,
-                        'maGianHang': product.shopId,
-                      },
-                    );
-                  },
-                  onAddToCart: () async {
-                    final success = await context
-                        .read<ShopCubit>()
-                        .addToCart(product.productId, 1);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(success
-                              ? 'Đã thêm ${product.productName} vào giỏ'
-                              : 'Không thể thêm vào giỏ hàng'),
-                          backgroundColor:
-                              success ? const Color(0xFF00B40F) : Colors.red,
-                          duration: const Duration(seconds: 1),
-                        ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final product = state.products[index];
+              final isSuggested = _isProductSuggested(product.productName);
+
+              return Stack(
+                children: [
+                  IngredientGridCard(
+                    name: product.productName,
+                    price: PriceFormatter.formatPrice(product.price),
+                    imagePath: product.productImage,
+                    onTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        RouteName.ingredientDetail,
+                        arguments: {
+                          'maNguyenLieu': product.productId,
+                          'maGianHang': product.shopId,
+                        },
                       );
-                    }
-                  },
-                  onBuyNow: () {
-                    // Navigate to payment with buy now
-                    Navigator.pushNamed(
-                      context,
-                      RouteName.payment,
-                      arguments: {
-                        'isBuyNow': true,
-                        'maNguyenLieu': product.productId,
-                        'tenNguyenLieu': product.productName,
-                        'maGianHang': product.shopId,
-                        'hinhAnh': product.productImage,
-                        'gia': product.price.toString(),
-                        'soLuong': 1,
-                      },
-                    );
-                  },
+                    },
+                    onAddToCart: () async {
+                      final success = await context.read<ShopCubit>().addToCart(
+                        product.productId,
+                        1,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? 'Đã thêm ${product.productName} vào giỏ'
+                                  : 'Không thể thêm vào giỏ hàng',
+                            ),
+                            backgroundColor: success
+                                ? const Color(0xFF00B40F)
+                                : Colors.red,
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    },
+                    onBuyNow: () {
+                      // Navigate to payment with buy now
+                      Navigator.pushNamed(
+                        context,
+                        RouteName.payment,
+                        arguments: {
+                          'isBuyNow': true,
+                          'maNguyenLieu': product.productId,
+                          'tenNguyenLieu': product.productName,
+                          'maGianHang': product.shopId,
+                          'hinhAnh': product.productImage,
+                          'gia': product.price.toString(),
+                          'soLuong': 1,
+                        },
+                      );
+                    },
+                  ),
+                  // Suggested badge
+                  if (isSuggested)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF00B40F),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'Đề xuất',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }, childCount: state.products.length),
+          ),
+        ),
+
+        // Loading indicator khi đang tải thêm
+        SliverToBoxAdapter(
+          child: BlocBuilder<ShopCubit, ShopState>(
+            builder: (context, loadingState) {
+              if (loadingState is ShopLoadingMore) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF00B40F),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Đang tải thêm sản phẩm...',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
                 );
-              },
-              childCount: state.products.length,
-            ),
+              }
+              return const SizedBox.shrink();
+            },
           ),
         ),
 
         // Bottom padding
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 24),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 24)),
       ],
     );
   }
@@ -258,8 +400,11 @@ class _ShopPageState extends State<ShopPage> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star,
-                                color: Color(0xFFFFB800), size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Color(0xFFFFB800),
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               shopInfo.shopRating.toStringAsFixed(1),
@@ -290,7 +435,6 @@ class _ShopPageState extends State<ShopPage> {
       ),
     );
   }
-
 
   /// Shop info section với stats và location
   Widget _buildShopInfoSection(BuildContext context, ShopInfo shopInfo) {
@@ -378,10 +522,7 @@ class _ShopPageState extends State<ShopPage> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Color(0xFF8E8E93),
-          ),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
         ),
       ],
     );
@@ -414,5 +555,37 @@ class _ShopPageState extends State<ShopPage> {
         child: const Icon(Icons.store, size: 40, color: Color(0xFF8E8E93)),
       ),
     );
+  }
+
+  Future<void> _openChatWithShop(
+    BuildContext context,
+    ShopInfo shopInfo,
+  ) async {
+    try {
+      final chatService = getIt<ChatService>();
+      final conversation = await chatService.createConversation(
+        shopInfo.shopId,
+      );
+
+      if (!context.mounted) return;
+
+      Navigator.pushNamed(
+        context,
+        RouteName.chatRoom,
+        arguments: {
+          'conversationId': conversation.conversationId,
+          'title': shopInfo.shopName,
+        },
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

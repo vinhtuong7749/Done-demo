@@ -4,13 +4,14 @@ import '../../../../../core/widgets/buyer_loading.dart';
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
 import '../../../../../core/widgets/search_result_card.dart';
+import '../../../../../core/widgets/error_state_view.dart';
 import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
 
 /// Search result screen displaying search results
 class SearchResultScreen extends StatelessWidget {
   final String searchQuery;
-  
+
   const SearchResultScreen({super.key, required this.searchQuery});
 
   @override
@@ -24,7 +25,7 @@ class SearchResultScreen extends StatelessWidget {
 
 class _SearchResultScreenView extends StatelessWidget {
   final String searchQuery;
-  
+
   const _SearchResultScreenView({required this.searchQuery});
 
   @override
@@ -66,9 +67,7 @@ class _SearchResultScreenView extends StatelessWidget {
   }
 
   Widget _buildLoadingView() {
-    return const BuyerLoading(
-              message: 'Đang tải...',
-            );
+    return const BuyerLoading(message: 'Đang tải...');
   }
 
   Widget _buildSuccessView(BuildContext context, SearchSuccess state) {
@@ -91,64 +90,70 @@ class _SearchResultScreenView extends StatelessWidget {
         // Gian hàng
         if (state.data.stalls.isNotEmpty) ...[
           _buildSectionHeader('Gian hàng (${state.data.stalls.length})'),
-          ...state.data.stalls.map((stall) => SearchResultCard(
-                title: stall.name,
-                subtitle: 'Gian hàng',
-                imageUrl: stall.image,
-                defaultIcon: Icons.store,
-                onTap: () {
-                  AppRouter.navigateTo(
-                    context,
-                    RouteName.shop,
-                    arguments: stall.id,
-                  );
-                },
-              )),
+          ...state.data.stalls.map(
+            (stall) => SearchResultCard(
+              title: stall.name,
+              subtitle: 'Gian hàng',
+              imageUrl: stall.image,
+              defaultIcon: Icons.store,
+              onTap: () {
+                AppRouter.navigateTo(
+                  context,
+                  RouteName.shop,
+                  arguments: stall.id,
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
 
         // Món ăn
         if (state.data.dishes.isNotEmpty) ...[
           _buildSectionHeader('Món ăn (${state.data.dishes.length})'),
-          ...state.data.dishes.map((dish) => SearchResultCard(
-                title: dish.name,
-                subtitle: 'Món ăn',
-                imageUrl: dish.image,
-                defaultIcon: Icons.restaurant,
-                onTap: () {
-                  AppRouter.navigateTo(
-                    context,
-                    RouteName.productDetail,
-                    arguments: dish.id,
-                  );
-                },
-              )),
+          ...state.data.dishes.map(
+            (dish) => SearchResultCard(
+              title: dish.name,
+              subtitle: 'Món ăn',
+              imageUrl: dish.image,
+              defaultIcon: Icons.restaurant,
+              onTap: () {
+                AppRouter.navigateTo(
+                  context,
+                  RouteName.productDetail,
+                  arguments: dish.id,
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
 
         // Nguyên liệu
         if (state.data.ingredients.isNotEmpty) ...[
           _buildSectionHeader('Nguyên liệu (${state.data.ingredients.length})'),
-          ...state.data.ingredients.map((ingredient) => SearchResultCard(
-                title: ingredient.name,
-                subtitle: 'Nguyên liệu',
-                imageUrl: ingredient.image,
-                defaultIcon: Icons.shopping_basket,
-                onTap: () {
-                  AppRouter.navigateTo(
-                    context,
-                    RouteName.ingredientDetail,
-                    arguments: {
-                      'maNguyenLieu': ingredient.id,
-                      'name': ingredient.name,
-                      'image': ingredient.image ?? '',
-                      'price': '',
-                      'unit': null,
-                      'shopName': null,
-                    },
-                  );
-                },
-              )),
+          ...state.data.ingredients.map(
+            (ingredient) => SearchResultCard(
+              title: ingredient.name,
+              subtitle: 'Nguyên liệu',
+              imageUrl: ingredient.image,
+              defaultIcon: Icons.shopping_basket,
+              onTap: () {
+                AppRouter.navigateTo(
+                  context,
+                  RouteName.ingredientDetail,
+                  arguments: {
+                    'maNguyenLieu': ingredient.id,
+                    'name': ingredient.name,
+                    'image': ingredient.image ?? '',
+                    'price': '',
+                    'unit': null,
+                    'shopName': null,
+                  },
+                );
+              },
+            ),
+          ),
         ],
       ],
     );
@@ -174,11 +179,7 @@ class _SearchResultScreenView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.search_off,
-            size: 80,
-            color: Colors.grey[300],
-          ),
+          Icon(Icons.search_off, size: 80, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
             'Không tìm thấy kết quả cho "$query"',
@@ -205,52 +206,11 @@ class _SearchResultScreenView extends StatelessWidget {
   }
 
   Widget _buildErrorView(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline,
-            size: 80,
-            color: Colors.red[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Đã có lỗi xảy ra',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              context.read<SearchCubit>().search(searchQuery);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B40F),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Thử lại'),
-          ),
-        ],
-      ),
+    return AppErrorView(
+      message: message,
+      onRetry: () {
+        context.read<SearchCubit>().search(searchQuery);
+      },
     );
   }
-
 }

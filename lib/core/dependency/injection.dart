@@ -11,6 +11,9 @@ import '../services/navigation_state_service.dart';
 import '../services/khu_vuc_service.dart';
 import '../services/cho_service.dart';
 import '../services/chat_ai_service.dart';
+import '../services/chat_service.dart';
+import '../services/chat_socket_service.dart';
+import '../services/llm_chatbot_service.dart';
 import '../services/search_service.dart';
 import '../services/search_history_service.dart';
 import '../services/cart_api_service.dart';
@@ -91,6 +94,24 @@ Future<void> initDependencies() async {
     () => ChatAIService(),
   );
   AppLogger.info('✅ ChatAIService registered');
+
+  // Chat Service (Buyer-Seller REST) - Singleton
+  getIt.registerLazySingleton<ChatService>(
+    () => ChatService(),
+  );
+  AppLogger.info('✅ ChatService registered');
+
+  // Chat Socket Service (Realtime WS) - Singleton
+  getIt.registerLazySingleton<ChatSocketService>(
+    () => ChatSocketService(),
+  );
+  AppLogger.info('✅ ChatSocketService registered');
+
+  // LLM Chatbot Service - Singleton
+  getIt.registerLazySingleton<LlmChatbotService>(
+    () => LlmChatbotService(),
+  );
+  AppLogger.info('✅ LlmChatbotService registered');
 
   // Search Service - Singleton
   getIt.registerLazySingleton<SearchService>(

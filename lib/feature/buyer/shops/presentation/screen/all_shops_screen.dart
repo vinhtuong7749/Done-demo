@@ -4,6 +4,7 @@ import '../cubit/all_shops_cubit.dart';
 import '../cubit/all_shops_state.dart';
 import '../../../../../core/widgets/buyer_loading.dart';
 import '../../../../../core/widgets/cart_badge_icon.dart';
+import '../../../../../core/widgets/error_state_view.dart';
 import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
 
@@ -98,40 +99,14 @@ class _AllShopsViewState extends State<_AllShopsView> {
         ),
       ),
       centerTitle: true,
-      actions: const [
-        CartBadgeIcon(iconSize: 24),
-        SizedBox(width: 16),
-      ],
+      actions: const [CartBadgeIcon(iconSize: 24), SizedBox(width: 16)],
     );
   }
 
   Widget _buildErrorView(BuildContext context, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.red, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => context.read<AllShopsCubit>().refresh(),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Thử lại'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B40F),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
+    return AppErrorView(
+      message: message,
+      onRetry: () => context.read<AllShopsCubit>().refresh(),
     );
   }
 
@@ -180,10 +155,7 @@ class _AllShopsViewState extends State<_AllShopsView> {
           const SizedBox(height: 16),
           Text(
             'Không có gian hàng nào',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
         ],
       ),
@@ -191,8 +163,10 @@ class _AllShopsViewState extends State<_AllShopsView> {
   }
 
   Widget _buildShopCard(BuildContext context, ShopItem shop) {
-    final isNetworkImage = shop.hinhAnh != null &&
-        (shop.hinhAnh!.startsWith('http://') || shop.hinhAnh!.startsWith('https://'));
+    final isNetworkImage =
+        shop.hinhAnh != null &&
+        (shop.hinhAnh!.startsWith('http://') ||
+            shop.hinhAnh!.startsWith('https://'));
 
     return GestureDetector(
       onTap: () {
@@ -219,7 +193,9 @@ class _AllShopsViewState extends State<_AllShopsView> {
           children: [
             // Shop Image
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(12),
+              ),
               child: AspectRatio(
                 aspectRatio: 1.2,
                 child: shop.hinhAnh != null && isNetworkImage
@@ -231,7 +207,7 @@ class _AllShopsViewState extends State<_AllShopsView> {
                     : _buildImagePlaceholder(),
               ),
             ),
-            
+
             // Shop Info
             Expanded(
               child: Padding(
@@ -252,7 +228,7 @@ class _AllShopsViewState extends State<_AllShopsView> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Location
                     Row(
                       children: [
@@ -277,7 +253,7 @@ class _AllShopsViewState extends State<_AllShopsView> {
                       ],
                     ),
                     const Spacer(),
-                    
+
                     // Rating
                     if (shop.danhGiaTb > 0)
                       Flexible(
@@ -315,11 +291,7 @@ class _AllShopsViewState extends State<_AllShopsView> {
     return Container(
       color: const Color(0xFFF5F5F5),
       child: const Center(
-        child: Icon(
-          Icons.store,
-          size: 40,
-          color: Color(0xFF00B40F),
-        ),
+        child: Icon(Icons.store, size: 40, color: Color(0xFF00B40F)),
       ),
     );
   }

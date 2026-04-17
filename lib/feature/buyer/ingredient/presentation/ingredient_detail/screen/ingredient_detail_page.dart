@@ -51,13 +51,16 @@ class _IngredientDetailView extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: BlocListener<IngredientDetailCubit, IngredientDetailState>(
-        listenWhen: (previous, current) => current.lastCartActionMessage != null,
+        listenWhen: (previous, current) =>
+            current.lastCartActionMessage != null,
         listener: (context, state) {
           if (state.lastCartActionMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.lastCartActionMessage!),
-                backgroundColor: state.lastCartActionSuccess == true ? Colors.green : Colors.red,
+                backgroundColor: state.lastCartActionSuccess == true
+                    ? Colors.green
+                    : Colors.red,
                 duration: const Duration(seconds: 2),
               ),
             );
@@ -85,7 +88,10 @@ class _IngredientDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildScrollableContent(BuildContext context, IngredientDetailState state) {
+  Widget _buildScrollableContent(
+    BuildContext context,
+    IngredientDetailState state,
+  ) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,19 +100,19 @@ class _IngredientDetailView extends StatelessWidget {
           _buildProductImage(state),
           _buildProductInfo(state),
           const Divider(height: 2, thickness: 2, color: Color(0xFFD9D9D9)),
-          
+
           // Danh sách gian hàng bán sản phẩm này
           if (state.sellers.isNotEmpty) ...[
             _buildSellersSection(context, state),
             const Divider(height: 2, thickness: 2, color: Color(0xFFD9D9D9)),
           ],
-          
+
           // Đánh giá của gian hàng được chọn
           if (state.selectedSeller != null) ...[
             _buildReviewsSection(context, state),
             const Divider(height: 2, thickness: 2, color: Color(0xFFD9D9D9)),
           ],
-          
+
           _buildRelatedProducts(context, state),
           const SizedBox(height: 24),
           _buildRecommendedProducts(context, state),
@@ -127,7 +133,7 @@ class _IngredientDetailView extends StatelessWidget {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -174,12 +180,16 @@ class _IngredientDetailView extends StatelessWidget {
     final imagePath = state.ingredientImage;
     // Đảm bảo imagePath là URL tuyệt đối nếu không bắt đầu bằng assets
     String finalPath = imagePath;
-    if (imagePath.isNotEmpty && !imagePath.startsWith('http') && !imagePath.startsWith('assets')) {
-      finalPath = '${AppConfig.imageBaseUrl}${imagePath.startsWith('/') ? '' : '/'}$imagePath';
+    if (imagePath.isNotEmpty &&
+        !imagePath.startsWith('http') &&
+        !imagePath.startsWith('assets')) {
+      finalPath =
+          '${AppConfig.imageBaseUrl}${imagePath.startsWith('/') ? '' : '/'}$imagePath';
     }
 
-    final isNetworkImage = finalPath.startsWith('http://') || finalPath.startsWith('https://');
-    
+    final isNetworkImage =
+        finalPath.startsWith('http://') || finalPath.startsWith('https://');
+
     final placeholderWidget = Container(
       color: Colors.grey[200],
       child: const Icon(Icons.image, size: 80, color: Colors.grey),
@@ -191,31 +201,32 @@ class _IngredientDetailView extends StatelessWidget {
       child: finalPath.isEmpty
           ? placeholderWidget
           : isNetworkImage
-              ? Image.network(
-                  finalPath,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(
-                      color: Colors.grey[200],
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                              : null,
-                          strokeWidth: 3,
-                          color: const Color(0xFF00B40F),
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => placeholderWidget,
-                )
-              : Image.asset(
-                  finalPath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => placeholderWidget,
-                ),
+          ? Image.network(
+              finalPath,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                          : null,
+                      strokeWidth: 3,
+                      color: const Color(0xFF00B40F),
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (_, __, ___) => placeholderWidget,
+            )
+          : Image.asset(
+              finalPath,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => placeholderWidget,
+            ),
     );
   }
 
@@ -241,7 +252,8 @@ class _IngredientDetailView extends StatelessWidget {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => context.read<IngredientDetailCubit>().toggleFavorite(),
+                    onTap: () =>
+                        context.read<IngredientDetailCubit>().toggleFavorite(),
                     child: Icon(
                       state.isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: Colors.red,
@@ -294,7 +306,10 @@ class _IngredientDetailView extends StatelessWidget {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.red[50],
                           borderRadius: BorderRadius.circular(4),
@@ -318,7 +333,10 @@ class _IngredientDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildSellersSection(BuildContext context, IngredientDetailState state) {
+  Widget _buildSellersSection(
+    BuildContext context,
+    IngredientDetailState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -326,11 +344,7 @@ class _IngredientDetailView extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(17, 16, 17, 12),
           child: Row(
             children: [
-              const Icon(
-                Icons.store,
-                size: 20,
-                color: Color(0xFF00B40F),
-              ),
+              const Icon(Icons.store, size: 20, color: Color(0xFF00B40F)),
               const SizedBox(width: 8),
               Text(
                 'Chọn gian hàng (${state.sellers.length})',
@@ -360,169 +374,137 @@ class _IngredientDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildSellerCard(BuildContext context, Seller seller, IngredientDetailState state) {
-    final isNetworkImage = seller.imagePath != null && 
-        (seller.imagePath!.startsWith('http://') || seller.imagePath!.startsWith('https://'));
+  Widget _buildSellerCard(
+    BuildContext context,
+    Seller seller,
+    IngredientDetailState state,
+  ) {
+    final isNetworkImage =
+        seller.imagePath != null &&
+        (seller.imagePath!.startsWith('http://') ||
+            seller.imagePath!.startsWith('https://'));
     final isSelected = state.selectedSeller?.maGianHang == seller.maGianHang;
-    
-    return GestureDetector(
-      onTap: () {
-        print('👆 [UI] Bấm vào gian hàng: ${seller.tenGianHang}');
-        print('👆 [UI] Mã gian hàng: ${seller.maGianHang}');
-        context.read<IngredientDetailCubit>().selectSeller(seller);
-      },
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color.fromARGB(255, 206, 233, 208) : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF00B40F) : const Color(0xFFE0E0E0),
-            width: isSelected ? 2 : 1,
+    final isUnavailable = !seller.isAvailable;
+    final statusMessage = !seller.isMoCua
+        ? 'Cửa hàng đang không hoạt động'
+        : 'Hết hàng';
+
+    return Opacity(
+      opacity: isUnavailable ? 0.55 : 1,
+      child: GestureDetector(
+        onTap: isUnavailable
+            ? null
+            : () {
+                debugPrint('👆 [UI] Bấm vào gian hàng: ${seller.tenGianHang}');
+                debugPrint('👆 [UI] Mã gian hàng: ${seller.maGianHang}');
+                context.read<IngredientDetailCubit>().selectSeller(seller);
+              },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? const Color.fromARGB(255, 206, 233, 208)
+                : (isUnavailable ? const Color(0xFFF3F3F3) : Colors.white),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF00B40F)
+                  : const Color(0xFFE0E0E0),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hình ảnh sản phẩm từ seller
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: seller.imagePath != null && seller.imagePath!.isNotEmpty
-                  ? (isNetworkImage
-                      ? Image.network(
-                          seller.imagePath!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
-                        )
-                      : Image.asset(
-                          seller.imagePath!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildImagePlaceholder(),
-                        ))
-                  : _buildImagePlaceholder(),
-            ),
-            const SizedBox(width: 12),
-            
-            // Thông tin seller
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tên gian hàng
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          seller.tenGianHang,
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1C1C1E),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Hình ảnh sản phẩm từ seller
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: seller.imagePath != null && seller.imagePath!.isNotEmpty
+                    ? (isNetworkImage
+                          ? Image.network(
+                              seller.imagePath!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildImagePlaceholder(),
+                            )
+                          : Image.asset(
+                              seller.imagePath!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildImagePlaceholder(),
+                            ))
+                    : _buildImagePlaceholder(),
+              ),
+              const SizedBox(width: 12),
+
+              // Thông tin seller
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Tên gian hàng
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            seller.tenGianHang,
+                            style: const TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1C1C1E),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      if (!seller.isMoCua)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Text(
-                            'ĐÓNG CỬA',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
+                        if (isUnavailable)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              !seller.isMoCua ? 'TẠM NGHỈ' : 'HẾT HÀNG',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Vị trí
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        size: 14,
-                        color: Color(0xFF8E8E93),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          seller.viTri,
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF8E8E93),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Giá và đơn vị
-                  Row(
-                    children: [
-                      if (seller.hasDiscount && seller.originalPrice != null) ...[
-                        Text(
-                          seller.originalPrice!,
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Color(0xFF8E8E93),
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
                       ],
-                      Flexible(
-                        child: Text(
-                          seller.price,
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFFF3B30),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Vị trí
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Color(0xFF8E8E93),
                         ),
-                      ),
-                      if (seller.unit != null) ...[
-                        const Text(
-                          ' / ',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 13,
-                            color: Color(0xFF8E8E93),
-                          ),
-                        ),
-                        Flexible(
+                        const SizedBox(width: 4),
+                        Expanded(
                           child: Text(
-                            seller.unit!,
+                            seller.viTri,
                             style: const TextStyle(
                               fontFamily: 'Roboto',
                               fontSize: 13,
@@ -534,49 +516,111 @@ class _IngredientDetailView extends StatelessWidget {
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Trạng thái hàng
-                  if (seller.conHang)
-                    Text(
-                      'Còn ${seller.soLuongBan} ${seller.unit ?? ""}',
-                      style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF8E8E93),
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Hết hàng',
-                        style: TextStyle(
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Giá và đơn vị
+                    Row(
+                      children: [
+                        if (seller.hasDiscount &&
+                            seller.originalPrice != null) ...[
+                          Text(
+                            seller.originalPrice!,
+                            style: const TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF8E8E93),
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
+                        Flexible(
+                          child: Text(
+                            seller.price,
+                            style: const TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFFF3B30),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (seller.unit != null) ...[
+                          const Text(
+                            ' / ',
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 13,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              seller.unit!,
+                              style: const TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFF8E8E93),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Trạng thái hàng
+                    if (!isUnavailable)
+                      Text(
+                        'Còn ${seller.soLuongBan} ${seller.unit ?? ""}',
+                        style: const TextStyle(
                           fontFamily: 'Roboto',
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.red,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red[50],
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          statusMessage,
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            
-            // Icon chọn
-            Icon(
-              isSelected ? Icons.check_circle : Icons.chevron_right,
-              size: 24,
-              color: isSelected ? const Color(0xFF00B40F) : const Color(0xFF8E8E93),
-            ),
-          ],
+
+              // Icon chọn
+              Icon(
+                isSelected ? Icons.check_circle : Icons.chevron_right,
+                size: 24,
+                color: isSelected
+                    ? const Color(0xFF00B40F)
+                    : const Color(0xFF8E8E93),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -595,7 +639,10 @@ class _IngredientDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewsSection(BuildContext context, IngredientDetailState state) {
+  Widget _buildReviewsSection(
+    BuildContext context,
+    IngredientDetailState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -603,11 +650,7 @@ class _IngredientDetailView extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(17, 16, 17, 12),
           child: Row(
             children: [
-              const Icon(
-                Icons.star,
-                size: 20,
-                color: Color(0xFFFFB800),
-              ),
+              const Icon(Icons.star, size: 20, color: Color(0xFFFFB800)),
               const SizedBox(width: 8),
               Text(
                 'Đánh giá ${state.selectedSeller?.tenGianHang ?? ""}',
@@ -632,7 +675,7 @@ class _IngredientDetailView extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Loading indicator
         if (state.isLoadingReviews)
           const Padding(
@@ -680,7 +723,7 @@ class _IngredientDetailView extends StatelessWidget {
               return _buildReviewItem(review);
             },
           ),
-        
+
         // Xem tất cả đánh giá
         if (state.reviews.length > 5)
           Padding(
@@ -702,7 +745,7 @@ class _IngredientDetailView extends StatelessWidget {
               ),
             ),
           ),
-        
+
         const SizedBox(height: 16),
       ],
     );
@@ -750,7 +793,9 @@ class _IngredientDetailView extends StatelessWidget {
                         // Stars
                         ...List.generate(5, (index) {
                           return Icon(
-                            index < review.rating ? Icons.star : Icons.star_border,
+                            index < review.rating
+                                ? Icons.star
+                                : Icons.star_border,
                             size: 14,
                             color: const Color(0xFFFFB800),
                           );
@@ -773,7 +818,7 @@ class _IngredientDetailView extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Comment
           if (review.binhLuan.isNotEmpty)
             Padding(
@@ -796,7 +841,7 @@ class _IngredientDetailView extends StatelessWidget {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-    
+
     if (diff.inDays == 0) {
       return 'Hôm nay';
     } else if (diff.inDays == 1) {
@@ -810,7 +855,10 @@ class _IngredientDetailView extends StatelessWidget {
     }
   }
 
-  Widget _buildRelatedProducts(BuildContext context, IngredientDetailState state) {
+  Widget _buildRelatedProducts(
+    BuildContext context,
+    IngredientDetailState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -842,7 +890,10 @@ class _IngredientDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecommendedProducts(BuildContext context, IngredientDetailState state) {
+  Widget _buildRecommendedProducts(
+    BuildContext context,
+    IngredientDetailState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -912,10 +963,14 @@ class _IngredientDetailView extends StatelessWidget {
   }
 
   Widget _buildBottomAction(BuildContext context, IngredientDetailState state) {
-    final isOutOfStock = state.selectedSeller != null && !state.selectedSeller!.conHang;
-    final isClosed = state.selectedSeller != null && !state.selectedSeller!.isMoCua;
+    final isOutOfStock =
+        state.selectedSeller != null && !state.selectedSeller!.conHang;
+    final isClosed =
+        state.selectedSeller != null && !state.selectedSeller!.isMoCua;
     final isDisabled = isOutOfStock || isClosed;
-    final isMaxQuantity = state.selectedSeller != null && state.quantity >= state.selectedSeller!.soLuongBan;
+    final isMaxQuantity =
+        state.selectedSeller != null &&
+        state.quantity >= state.selectedSeller!.soLuongBan;
     final statusText = isClosed ? 'Đóng cửa' : 'Hết hàng';
 
     return Positioned(
@@ -940,7 +995,8 @@ class _IngredientDetailView extends StatelessWidget {
             children: [
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => context.read<IngredientDetailCubit>().chatWithShop(),
+                onTap: () =>
+                    context.read<IngredientDetailCubit>().chatWithShop(context),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -968,7 +1024,7 @@ class _IngredientDetailView extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Quantity controls
               Container(
                 height: 40,
@@ -982,13 +1038,17 @@ class _IngredientDetailView extends StatelessWidget {
                     // Decrease button
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: isDisabled ? null : () => context.read<IngredientDetailCubit>().decreaseQuantity(),
+                      onTap: isDisabled
+                          ? null
+                          : () => context
+                                .read<IngredientDetailCubit>()
+                                .decreaseQuantity(),
                       child: Container(
                         width: 32,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: (state.quantity > 1 && !isDisabled) 
-                              ? const Color(0xFFF5F5F5) 
+                          color: (state.quantity > 1 && !isDisabled)
+                              ? const Color(0xFFF5F5F5)
                               : const Color(0xFFE0E0E0),
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(4),
@@ -998,13 +1058,13 @@ class _IngredientDetailView extends StatelessWidget {
                         child: Icon(
                           Icons.remove,
                           size: 18,
-                          color: (state.quantity > 1 && !isDisabled) 
-                              ? const Color(0xFF00B40F) 
+                          color: (state.quantity > 1 && !isDisabled)
+                              ? const Color(0xFF00B40F)
                               : const Color(0xFF999999),
                         ),
                       ),
                     ),
-                    
+
                     // Quantity display
                     Container(
                       width: 40,
@@ -1017,21 +1077,29 @@ class _IngredientDetailView extends StatelessWidget {
                             fontFamily: 'Roboto',
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: isDisabled ? Colors.grey : const Color(0xFF000000),
+                            color: isDisabled
+                                ? Colors.grey
+                                : const Color(0xFF000000),
                           ),
                         ),
                       ),
                     ),
-                    
+
                     // Increase button
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: (isDisabled || isMaxQuantity) ? null : () => context.read<IngredientDetailCubit>().increaseQuantity(),
+                      onTap: (isDisabled || isMaxQuantity)
+                          ? null
+                          : () => context
+                                .read<IngredientDetailCubit>()
+                                .increaseQuantity(),
                       child: Container(
                         width: 32,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: (isDisabled || isMaxQuantity) ? const Color(0xFFE0E0E0) : const Color(0xFFF5F5F5),
+                          color: (isDisabled || isMaxQuantity)
+                              ? const Color(0xFFE0E0E0)
+                              : const Color(0xFFF5F5F5),
                           borderRadius: const BorderRadius.only(
                             topRight: Radius.circular(4),
                             bottomRight: Radius.circular(4),
@@ -1040,14 +1108,16 @@ class _IngredientDetailView extends StatelessWidget {
                         child: Icon(
                           Icons.add,
                           size: 18,
-                          color: (isDisabled || isMaxQuantity) ? const Color(0xFF999999) : const Color(0xFF00B40F),
+                          color: (isDisabled || isMaxQuantity)
+                              ? const Color(0xFF999999)
+                              : const Color(0xFF00B40F),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               const SizedBox(width: 10),
               // Nút thêm vào giỏ hàng
               Expanded(
@@ -1055,15 +1125,18 @@ class _IngredientDetailView extends StatelessWidget {
                   color: isDisabled ? Colors.grey[200] : Colors.white,
                   borderRadius: BorderRadius.circular(4),
                   child: InkWell(
-                    onTap: (isDisabled || state.isAddingToCart) 
-                        ? null 
-                        : () => context.read<IngredientDetailCubit>().addToCart(),
+                    onTap: (isDisabled || state.isAddingToCart)
+                        ? null
+                        : () =>
+                              context.read<IngredientDetailCubit>().addToCart(),
                     borderRadius: BorderRadius.circular(4),
                     child: Container(
                       height: 40,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: isDisabled ? Colors.grey : const Color(0xFF00B40F),
+                          color: isDisabled
+                              ? Colors.grey
+                              : const Color(0xFF00B40F),
                         ),
                         borderRadius: BorderRadius.circular(4),
                         color: Colors.transparent,
@@ -1075,7 +1148,9 @@ class _IngredientDetailView extends StatelessWidget {
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00B40F)),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Color(0xFF00B40F),
+                                  ),
                                 ),
                               )
                             : Text(
@@ -1085,7 +1160,9 @@ class _IngredientDetailView extends StatelessWidget {
                                   fontFamily: 'Roboto',
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: isDisabled ? Colors.grey : const Color(0xFF00B40F),
+                                  color: isDisabled
+                                      ? Colors.grey
+                                      : const Color(0xFF00B40F),
                                   height: 1.1,
                                 ),
                               ),
@@ -1101,7 +1178,11 @@ class _IngredientDetailView extends StatelessWidget {
                   color: isDisabled ? Colors.grey : const Color(0xFF2F8000),
                   borderRadius: BorderRadius.circular(4),
                   child: InkWell(
-                    onTap: isDisabled ? null : () => context.read<IngredientDetailCubit>().buyNow(context),
+                    onTap: isDisabled
+                        ? null
+                        : () => context.read<IngredientDetailCubit>().buyNow(
+                            context,
+                          ),
                     borderRadius: BorderRadius.circular(4),
                     child: Container(
                       height: 40,

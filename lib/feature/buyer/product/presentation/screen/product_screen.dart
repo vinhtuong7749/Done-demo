@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/config/app_config.dart';
 import '../../../../../core/widgets/product_list_item.dart';
-import '../../../../../core/widgets/cart_badge_icon.dart';
 import '../../../../../core/widgets/buyer_loading.dart';
+import '../../../../../core/widgets/error_state_view.dart';
 import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
 import '../cubit/product_cubit.dart';
@@ -65,10 +65,9 @@ class _ProductViewState extends State<ProductView> {
     return BlocConsumer<ProductCubit, ProductState>(
       listener: (context, state) {
         if (state is ProductError && state.requiresLogin) {
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/login',
-            (route) => false,
-          );
+          Navigator.of(
+            context,
+          ).pushNamedAndRemoveUntil('/login', (route) => false);
         }
       },
       builder: (context, state) {
@@ -95,32 +94,10 @@ class _ProductViewState extends State<ProductView> {
               children: [
                 _buildHeader(context),
                 Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
-                        const SizedBox(height: 16),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
-                          child: Text(
-                            state.message,
-                            style: const TextStyle(color: Colors.red, fontSize: 16),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => context.read<ProductCubit>().loadProductData(),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Thử lại'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF00B40F),
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
+                  child: AppErrorView(
+                    message: state.message,
+                    onRetry: () =>
+                        context.read<ProductCubit>().loadProductData(),
                   ),
                 ),
               ],
@@ -169,7 +146,7 @@ class _ProductViewState extends State<ProductView> {
     return BlocBuilder<ProductCubit, ProductState>(
       builder: (context, state) {
         final searchQuery = state is ProductLoaded ? state.searchQuery : '';
-        
+
         return SafeArea(
           child: Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -199,16 +176,14 @@ class _ProductViewState extends State<ProductView> {
                 //   },
                 // ),
                 // const SizedBox(height: 12),
-                
+
                 // Search Bar Row
                 Row(
                   children: [
                     // Search Bar
-                    Expanded(
-                      child: _buildSearchBar(context, searchQuery),
-                    ),
+                    Expanded(child: _buildSearchBar(context, searchQuery)),
                     const SizedBox(width: 12),
-                    
+
                     // Cart Icon with Badge
                   ],
                 ),
@@ -231,18 +206,11 @@ class _ProductViewState extends State<ProductView> {
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFFE0E0E0),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.search,
-              size: 20,
-              color: Color(0xFF8E8E93),
-            ),
+            const Icon(Icons.search, size: 20, color: Color(0xFF8E8E93)),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
@@ -273,8 +241,9 @@ class _ProductViewState extends State<ProductView> {
               itemCount: state.categories.length,
               itemBuilder: (context, index) {
                 final category = state.categories[index];
-                final isSelected = state.selectedCategory == category.maDanhMucMonAn;
-                
+                final isSelected =
+                    state.selectedCategory == category.maDanhMucMonAn;
+
                 return GestureDetector(
                   onTap: () {
                     AppRouter.navigateTo(
@@ -288,9 +257,14 @@ class _ProductViewState extends State<ProductView> {
                   },
                   child: Container(
                     margin: const EdgeInsets.only(right: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      border: isSelected ? Border.all(color: const Color(0xFF008EDB)) : null,
+                      border: isSelected
+                          ? Border.all(color: const Color(0xFF008EDB))
+                          : null,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -298,9 +272,13 @@ class _ProductViewState extends State<ProductView> {
                       style: TextStyle(
                         fontFamily: 'Roboto',
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         letterSpacing: 0.5,
-                        color: isSelected ? const Color(0xFF008EDB) : const Color(0xFF000000),
+                        color: isSelected
+                            ? const Color(0xFF008EDB)
+                            : const Color(0xFF000000),
                         height: 1.33,
                       ),
                     ),
@@ -310,7 +288,7 @@ class _ProductViewState extends State<ProductView> {
             ),
           );
         }
-        
+
         // Không hiển thị gì nếu chưa có categories (đã có loading chung)
         return const SizedBox(height: 35);
       },
@@ -351,14 +329,15 @@ class _ProductViewState extends State<ProductView> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.restaurant_menu, size: 64, color: Colors.grey[300]),
+                    Icon(
+                      Icons.restaurant_menu,
+                      size: 64,
+                      color: Colors.grey[300],
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Chưa có món ăn nào',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -369,41 +348,38 @@ class _ProductViewState extends State<ProductView> {
           return SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 28),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  // Hiển thị loading indicator ở cuối danh sách khi load more
-                  if (index >= monAnList.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                        child: BuyerLoadingSmall(size: 32),
-                      ),
-                    );
-                  }
-
-                  final monAnWithImage = monAnList[index];
-                  final monAn = monAnWithImage.monAn;
-                  final imageUrl = monAnWithImage.imageUrl;
-
-                  return ProductListItem(
-                    productName: monAn.tenMonAn,
-                    imagePath: imageUrl.isNotEmpty
-                        ? (imageUrl.startsWith('http') ? imageUrl : '${AppConfig.imageBaseUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
-                        : 'assets/img/mon_an_icon.png',
-                    servings: monAnWithImage.servings,
-                    difficulty: monAnWithImage.difficulty,
-                    cookTime: monAnWithImage.cookTime,
-                    onViewDetail: () {
-                      AppRouter.navigateTo(
-                        context,
-                        RouteName.productDetail,
-                        arguments: monAn.maMonAn,
-                      );
-                    },
+              delegate: SliverChildBuilderDelegate((context, index) {
+                // Hiển thị loading indicator ở cuối danh sách khi load more
+                if (index >= monAnList.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: BuyerLoadingSmall(size: 32)),
                   );
-                },
-                childCount: monAnList.length + (state.isLoadingMore ? 1 : 0),
-              ),
+                }
+
+                final monAnWithImage = monAnList[index];
+                final monAn = monAnWithImage.monAn;
+                final imageUrl = monAnWithImage.imageUrl;
+
+                return ProductListItem(
+                  productName: monAn.tenMonAn,
+                  imagePath: imageUrl.isNotEmpty
+                      ? (imageUrl.startsWith('http')
+                            ? imageUrl
+                            : '${AppConfig.imageBaseUrl}${imageUrl.startsWith('/') ? '' : '/'}$imageUrl')
+                      : 'assets/img/mon_an_icon.png',
+                  servings: monAnWithImage.servings,
+                  difficulty: monAnWithImage.difficulty,
+                  cookTime: monAnWithImage.cookTime,
+                  onViewDetail: () {
+                    AppRouter.navigateTo(
+                      context,
+                      RouteName.productDetail,
+                      arguments: monAn.maMonAn,
+                    );
+                  },
+                );
+              }, childCount: monAnList.length + (state.isLoadingMore ? 1 : 0)),
             ),
           );
         }

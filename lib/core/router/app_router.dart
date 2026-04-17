@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../config/app_config.dart';
+import '../utils/app_logger.dart';
+import '../../feature/buyer/home/presentation/cubit/home_state.dart';
 import '../../feature/buyer/ingredient/presentation/ingredient_detail/screen/ingredient_detail_page.dart';
 import '../../feature/buyer/ingredient/presentation/category_ingredient/screen/category_ingredient_screen.dart';
 import '../../feature/buyer/shops/presentation/screen/all_shops_screen.dart';
@@ -34,6 +37,8 @@ import '../../feature/buyer/order/presentation/order/screen/order_page.dart';
 import '../../feature/buyer/search/presentation/screen/search_screen.dart';
 import '../../feature/buyer/product/presentation/screen/category_product_screen.dart';
 import '../../feature/user/presentation/edit_profile/screen/edit_profile_page.dart';
+import '../../feature/chat/presentation/screen/chat_hub_screen.dart';
+import '../../feature/chat/presentation/screen/chat_room_screen.dart';
 
 /// Quản lý navigation và routing của ứng dụng
 /// Sử dụng onGenerateRoute để tạo route động
@@ -113,6 +118,19 @@ class AppRouter {
       case RouteName.search:
         return _buildRoute(settings, const SearchScreen());
 
+      case RouteName.chat:
+        return _buildRoute(settings, const ChatHubScreen());
+
+      case RouteName.chatRoom:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          settings,
+          ChatRoomScreen(
+            conversationId: (args?['conversationId'] ?? '').toString(),
+            title: (args?['title'] ?? 'Trò chuyện').toString(),
+          ),
+        );
+
       case RouteName.categoryProducts:
         final args = settings.arguments as Map<String, String>?;
         return _buildRoute(
@@ -143,12 +161,35 @@ class AppRouter {
         return _buildRoute(settings, const EditProfilePage());
 
       case RouteName.shop:
-        final shopId = settings.arguments as String? ?? '';
+        final args = settings.arguments;
+        String shopId = '';
+        List<ShopProductPreview>? suggestedProducts;
+
+        if (args is String) {
+          // Backward compatibility: chỉ có shopId
+          shopId = args;
+          if (AppConfig.enableApiLogging) {
+            AppLogger.info('🏪 [ROUTER] Shop navigation (String): $shopId');
+          }
+        } else if (args is Map) {
+          // Mới: có cả shopId và suggestedProducts
+          shopId = args['shopId'] as String? ?? '';
+          suggestedProducts = args['suggestedProducts'] as List<ShopProductPreview>?;
+          if (AppConfig.enableApiLogging) {
+            AppLogger.info('🏪 [ROUTER] Shop navigation (Map):');
+            AppLogger.info('   shopId: $shopId');
+            AppLogger.info('   suggestedProducts: ${suggestedProducts?.length ?? 0} items');
+          }
+        }
+
         return _buildRoute(
           settings,
           BlocProvider(
             create: (_) => ShopCubit(),
-            child: ShopPage(shopId: shopId),
+            child: ShopPage(
+              shopId: shopId,
+              suggestedProducts: suggestedProducts,
+            ),
           ),
         );
 

@@ -64,16 +64,18 @@ class GianHangService {
   }
 
   /// Lấy chi tiết gian hàng theo mã
-  /// API: GET /api/buyer/gian-hang/{ma_gian_hang}
-  Future<ShopDetailResponse> getShopDetail(String maGianHang) async {
+  /// API: GET /api/buyer/gian-hang/{ma_gian_hang}?page={page}
+  Future<ShopDetailResponse> getShopDetail(String maGianHang, {int page = 1}) async {
     if (AppConfig.enableApiLogging) {
-      AppLogger.info('🏪 [GIAN HANG] Fetching shop detail: $maGianHang');
+      AppLogger.info('🏪 [GIAN HANG] Fetching shop detail: $maGianHang (page: $page)');
     }
 
     try {
       final token = await _authService.getToken();
 
-      final uri = Uri.parse('$baseUrl/gian-hang/$maGianHang');
+      final uri = Uri.parse('$baseUrl/gian-hang/$maGianHang').replace(
+        queryParameters: {'page': page.toString()},
+      );
 
       if (AppConfig.enableApiLogging) {
         AppLogger.info('🏪 [GIAN HANG] URL: $uri');
