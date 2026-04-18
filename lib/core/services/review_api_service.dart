@@ -6,16 +6,13 @@ import '../utils/app_logger.dart';
 
 /// Service để gọi API đánh giá
 class ReviewApiService {
-  // Base URL cho review API: /api/review
-  // AppConfig.baseUrl = https://xxx/api nên chỉ cần thêm /review
+  // Backend review router đang nằm trực tiếp dưới /api
   String get _baseUrl {
     final base = AppConfig.baseUrl;
-    // Nếu baseUrl kết thúc bằng /api thì chỉ thêm /review
     if (base.endsWith('/api')) {
-      return '$base/review';
+      return base;
     }
-    // Nếu không thì thêm /api/review
-    return '$base/api/review';
+    return '$base/api';
   }
 
   /// Lấy token từ SharedPreferences
@@ -35,13 +32,13 @@ class ReviewApiService {
 
       final response = await http.get(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (AppConfig.enableApiLogging) {
-        AppLogger.info('⭐ [REVIEW API] Response status: ${response.statusCode}');
+        AppLogger.info(
+          '⭐ [REVIEW API] Response status: ${response.statusCode}',
+        );
         AppLogger.info('⭐ [REVIEW API] Response body: ${response.body}');
       }
 
@@ -50,7 +47,8 @@ class ReviewApiService {
         return StoreReviewsResponse.fromJson(jsonData);
       } else {
         throw Exception(
-            'Failed to get store reviews: ${response.statusCode} - ${response.body}');
+          'Failed to get store reviews: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       if (AppConfig.enableApiLogging) {
@@ -79,7 +77,9 @@ class ReviewApiService {
 
     try {
       final token = await getToken();
-      AppLogger.info('⭐ [REVIEW API] Token: ${token != null ? "EXISTS (${token.substring(0, 20)}...)" : "NULL"}');
+      AppLogger.info(
+        '⭐ [REVIEW API] Token: ${token != null ? "EXISTS (${token.substring(0, 20)}...)" : "NULL"}',
+      );
 
       if (token == null) {
         throw Exception('User not logged in');
@@ -123,44 +123,51 @@ class ReviewApiService {
           final jsonData = json.decode(utf8.decode(response.bodyBytes));
           AppLogger.info('✅ [REVIEW API] Đánh giá thành công!');
           return ReviewResponse.fromJson(jsonData);
-        
+
         case 403:
-          AppLogger.error('❌ [REVIEW API] 403 - Chỉ có thể đánh giá nguyên liệu trong đơn hàng đã giao của bạn');
+          AppLogger.error(
+            '❌ [REVIEW API] 403 - Chỉ có thể đánh giá nguyên liệu trong đơn hàng đã giao của bạn',
+          );
           throw ReviewException(
             statusCode: 403,
-            message: 'Chỉ có thể đánh giá nguyên liệu trong đơn hàng đã giao của bạn',
+            message:
+                'Chỉ có thể đánh giá nguyên liệu trong đơn hàng đã giao của bạn',
           );
-        
+
         case 400:
           AppLogger.error('❌ [REVIEW API] 400 - Dữ liệu không hợp lệ');
           throw ReviewException(
             statusCode: 400,
             message: 'Dữ liệu đánh giá không hợp lệ',
           );
-        
+
         case 401:
           AppLogger.error('❌ [REVIEW API] 401 - Chưa đăng nhập');
           throw ReviewException(
             statusCode: 401,
             message: 'Vui lòng đăng nhập để đánh giá',
           );
-        
+
         case 404:
-          AppLogger.error('❌ [REVIEW API] 404 - Không tìm thấy đơn hàng hoặc nguyên liệu');
+          AppLogger.error(
+            '❌ [REVIEW API] 404 - Không tìm thấy đơn hàng hoặc nguyên liệu',
+          );
           throw ReviewException(
             statusCode: 404,
             message: 'Không tìm thấy đơn hàng hoặc nguyên liệu',
           );
-        
+
         case 409:
           AppLogger.error('❌ [REVIEW API] 409 - Đã đánh giá rồi');
           throw ReviewException(
             statusCode: 409,
             message: 'Bạn đã đánh giá sản phẩm này rồi',
           );
-        
+
         default:
-          AppLogger.error('❌ [REVIEW API] ${response.statusCode} - Lỗi không xác định');
+          AppLogger.error(
+            '❌ [REVIEW API] ${response.statusCode} - Lỗi không xác định',
+          );
           throw ReviewException(
             statusCode: response.statusCode,
             message: 'Lỗi gửi đánh giá: ${response.statusCode}',
@@ -185,10 +192,7 @@ class ReviewException implements Exception {
   final int statusCode;
   final String message;
 
-  ReviewException({
-    required this.statusCode,
-    required this.message,
-  });
+  ReviewException({required this.statusCode, required this.message});
 
   @override
   String toString() => message;
@@ -211,7 +215,9 @@ class ReviewResponse {
   factory ReviewResponse.fromJson(Map<String, dynamic> json) {
     return ReviewResponse(
       success: json['success'] ?? false,
-      review: json['review'] != null ? ReviewData.fromJson(json['review']) : null,
+      review: json['review'] != null
+          ? ReviewData.fromJson(json['review'])
+          : null,
       danhGiaTb: _parseToDouble(json['danh_gia_tb']),
       message: json['message'],
     );
@@ -277,7 +283,8 @@ class StoreReviewsResponse {
       success: json['success'] ?? false,
       total: json['total'] ?? 0,
       avg: _parseToDouble(json['avg']) ?? 0.0,
-      items: (json['items'] as List<dynamic>?)
+      items:
+          (json['items'] as List<dynamic>?)
               ?.map((item) => StoreReviewItem.fromJson(item))
               .toList() ??
           [],
@@ -335,10 +342,7 @@ class ReviewerInfo {
   final String maNguoiMua;
   final String tenHienThi;
 
-  ReviewerInfo({
-    required this.maNguoiMua,
-    required this.tenHienThi,
-  });
+  ReviewerInfo({required this.maNguoiMua, required this.tenHienThi});
 
   factory ReviewerInfo.fromJson(Map<String, dynamic> json) {
     return ReviewerInfo(

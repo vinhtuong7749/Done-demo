@@ -11,7 +11,7 @@ class ChatHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tin nhắn với người bán')),
+      appBar: AppBar(title: const Text('Tin nhắn')),
       body: const _BuyerSellerTab(),
     );
   }
@@ -58,6 +58,21 @@ class _BuyerSellerTab extends StatelessWidget {
               itemBuilder: (context, index) {
                 final conversation = state.conversations[index];
                 final title = conversation.getDisplayName(state.role);
+                final mySenderType = state.role == 'nguoi_mua'
+                    ? 'buyer'
+                    : 'seller';
+                final isLastMessageMine =
+                    (state.currentUserId != null &&
+                        state.currentUserId!.isNotEmpty)
+                    ? conversation.lastSenderId == state.currentUserId
+                    : conversation.lastSenderType == mySenderType;
+                final previewText =
+                    conversation.tinNhanCuoi == null ||
+                        conversation.tinNhanCuoi!.isEmpty
+                    ? 'Nhấn để bắt đầu trò chuyện'
+                    : isLastMessageMine
+                    ? 'Bạn: ${conversation.tinNhanCuoi}'
+                    : conversation.tinNhanCuoi!;
 
                 return ListTile(
                   tileColor: conversation.unread > 0
@@ -79,7 +94,7 @@ class _BuyerSellerTab extends StatelessWidget {
                     ),
                   ),
                   subtitle: Text(
-                    conversation.tinNhanCuoi ?? 'Nhấn để bắt đầu trò chuyện',
+                    previewText,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -110,8 +125,11 @@ class _BuyerSellerTab extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.pushNamed(
+                  onTap: () async {
+                    final cubit = context.read<ChatInboxCubit>();
+                    cubit.markConversationAsRead(conversation.conversationId);
+
+                    await Navigator.pushNamed(
                       context,
                       RouteName.chatRoom,
                       arguments: {
@@ -119,6 +137,9 @@ class _BuyerSellerTab extends StatelessWidget {
                         'title': title,
                       },
                     );
+
+                    if (!context.mounted) return;
+                    await cubit.loadConversations();
                   },
                 );
               },

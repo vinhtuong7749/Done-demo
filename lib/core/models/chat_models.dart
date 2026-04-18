@@ -6,6 +6,8 @@ class ChatConversation {
   final String? tenNguoiMua;
   final String? tinNhanCuoi;
   final DateTime? thoiGianCuoi;
+  final String? lastSenderId;
+  final String? lastSenderType;
   final int unread;
 
   const ChatConversation({
@@ -16,6 +18,8 @@ class ChatConversation {
     this.tenNguoiMua,
     this.tinNhanCuoi,
     this.thoiGianCuoi,
+    this.lastSenderId,
+    this.lastSenderType,
     this.unread = 0,
   });
 
@@ -28,6 +32,8 @@ class ChatConversation {
       tenNguoiMua: json['ten_nguoi_mua']?.toString(),
       tinNhanCuoi: json['tin_nhan_cuoi']?.toString(),
       thoiGianCuoi: _parseDateTime(json['thoi_gian_cuoi']),
+      lastSenderId: json['last_sender_id']?.toString(),
+      lastSenderType: json['last_sender_type']?.toString(),
       unread: _parseInt(json['unread']),
     );
   }

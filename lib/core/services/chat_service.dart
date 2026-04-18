@@ -10,7 +10,9 @@ import 'auth/simple_auth_helper.dart';
 class ChatService {
   static const String _baseUrl = AppConfig.baseUrl;
 
-  Future<ChatCreateConversationResponse> createConversation(String stallId) async {
+  Future<ChatCreateConversationResponse> createConversation(
+    String stallId,
+  ) async {
     final token = await getToken();
     if (token == null || token.isEmpty) {
       throw Exception('Bạn cần đăng nhập để sử dụng chat');
@@ -29,7 +31,9 @@ class ChatService {
       return ChatCreateConversationResponse.fromJson(jsonData);
     }
 
-    throw Exception(_extractErrorMessage(jsonData, fallback: 'Không thể tạo cuộc trò chuyện'));
+    throw Exception(
+      _extractErrorMessage(jsonData, fallback: 'Không thể tạo cuộc trò chuyện'),
+    );
   }
 
   Future<List<ChatConversation>> getConversations() async {
@@ -55,7 +59,12 @@ class ChatService {
       return list;
     }
 
-    throw Exception(_extractErrorMessage(jsonData, fallback: 'Không thể tải danh sách hội thoại'));
+    throw Exception(
+      _extractErrorMessage(
+        jsonData,
+        fallback: 'Không thể tải danh sách hội thoại',
+      ),
+    );
   }
 
   Future<ChatMessagePage> getMessages(
@@ -68,12 +77,9 @@ class ChatService {
       throw Exception('Bạn cần đăng nhập để sử dụng chat');
     }
 
-    final uri = Uri.parse('$_baseUrl/chat/conversations/$conversationId/messages').replace(
-      queryParameters: {
-        'page': '$page',
-        'limit': '$limit',
-      },
-    );
+    final uri = Uri.parse(
+      '$_baseUrl/chat/conversations/$conversationId/messages',
+    ).replace(queryParameters: {'page': '$page', 'limit': '$limit'});
 
     final response = await http.get(
       uri,
@@ -88,7 +94,9 @@ class ChatService {
       return ChatMessagePage.fromJson(jsonData);
     }
 
-    throw Exception(_extractErrorMessage(jsonData, fallback: 'Không thể tải tin nhắn'));
+    throw Exception(
+      _extractErrorMessage(jsonData, fallback: 'Không thể tải tin nhắn'),
+    );
   }
 
   Future<ChatMessageModel> sendMessage(
@@ -102,8 +110,10 @@ class ChatService {
     }
 
     final body = <String, dynamic>{
-      if (messageText != null && messageText.trim().isNotEmpty) 'message_text': messageText.trim(),
-      if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl.trim(),
+      if (messageText != null && messageText.trim().isNotEmpty)
+        'message_text': messageText.trim(),
+      if (imageUrl != null && imageUrl.trim().isNotEmpty)
+        'image_url': imageUrl.trim(),
     };
 
     if (body.isEmpty) {
@@ -125,7 +135,9 @@ class ChatService {
       return ChatMessageModel.fromJson(data);
     }
 
-    throw Exception(_extractErrorMessage(jsonData, fallback: 'Không thể gửi tin nhắn'));
+    throw Exception(
+      _extractErrorMessage(jsonData, fallback: 'Không thể gửi tin nhắn'),
+    );
   }
 
   Future<String> getCurrentRole() async {
@@ -133,16 +145,33 @@ class ChatService {
     return role ?? 'nguoi_mua';
   }
 
+  Future<String?> getCurrentUserId() async {
+    final userData = await getUserData();
+    final currentUserId =
+        userData?['user_id'] ?? userData?['ma_nguoi_dung'] ?? userData?['sub'];
+
+    final value = currentUserId?.toString().trim();
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    return value;
+  }
+
   Map<String, dynamic> _decodeResponse(http.Response response) {
     try {
-      return json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return json.decode(utf8.decode(response.bodyBytes))
+          as Map<String, dynamic>;
     } catch (e) {
       debugPrint('❌ [CHAT] Decode response failed: $e');
       return <String, dynamic>{};
     }
   }
 
-  String _extractErrorMessage(Map<String, dynamic> jsonData, {required String fallback}) {
+  String _extractErrorMessage(
+    Map<String, dynamic> jsonData, {
+    required String fallback,
+  }) {
     return (jsonData['message'] ?? jsonData['detail'] ?? fallback).toString();
   }
 }

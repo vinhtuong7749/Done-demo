@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +8,7 @@ import '../../../../core/dependency/injection.dart';
 import '../../../../core/models/chat_models.dart';
 import '../../../../core/services/chat_service.dart';
 import '../../../../core/services/chat_socket_service.dart';
+import '../../../../core/services/nhom_nguyen_lieu_service.dart';
 
 class ChatRoomState extends Equatable {
   final bool isLoading;
@@ -15,6 +17,7 @@ class ChatRoomState extends Equatable {
   final bool isReconnecting;
   final List<ChatMessageModel> messages;
   final String mySenderType;
+  final String? mySenderId;
   final String? errorMessage;
 
   const ChatRoomState({
@@ -24,6 +27,7 @@ class ChatRoomState extends Equatable {
     this.isReconnecting = false,
     this.messages = const [],
     this.mySenderType = 'buyer',
+    this.mySenderId,
     this.errorMessage,
   });
 
@@ -34,6 +38,7 @@ class ChatRoomState extends Equatable {
     bool? isReconnecting,
     List<ChatMessageModel>? messages,
     String? mySenderType,
+    String? mySenderId,
     String? errorMessage,
   }) {
     return ChatRoomState(
@@ -43,20 +48,22 @@ class ChatRoomState extends Equatable {
       isReconnecting: isReconnecting ?? this.isReconnecting,
       messages: messages ?? this.messages,
       mySenderType: mySenderType ?? this.mySenderType,
+      mySenderId: mySenderId ?? this.mySenderId,
       errorMessage: errorMessage,
     );
   }
 
   @override
   List<Object?> get props => [
-        isLoading,
-        isSending,
-        isSocketConnected,
-        isReconnecting,
-        messages,
-        mySenderType,
-        errorMessage,
-      ];
+    isLoading,
+    isSending,
+    isSocketConnected,
+    isReconnecting,
+    messages,
+    mySenderType,
+    mySenderId,
+    errorMessage,
+  ];
 }
 
 class ChatRoomCubit extends Cubit<ChatRoomState> {
@@ -70,9 +77,9 @@ class ChatRoomCubit extends Cubit<ChatRoomState> {
     required this.conversationId,
     ChatService? chatService,
     ChatSocketService? socketService,
-  })  : _chatService = chatService ?? getIt<ChatService>(),
-        _socketService = socketService ?? getIt<ChatSocketService>(),
-        super(const ChatRoomState());
+  }) : _chatService = chatService ?? getIt<ChatService>(),
+       _socketService = socketService ?? getIt<ChatSocketService>(),
+       super(const ChatRoomState());
 
   Future<void> initialize() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
@@ -80,24 +87,35 @@ class ChatRoomCubit extends Cubit<ChatRoomState> {
     try {
       final role = await _chatService.getCurrentRole();
       final senderType = role == 'nguoi_mua' ? 'buyer' : 'seller';
+      final senderId = await _chatService.getCurrentUserId();
 
-      final page = await _chatService.getMessages(conversationId, page: 1, limit: 50);
+      final page = await _chatService.getMessages(
+        conversationId,
+        page: 1,
+        limit: 50,
+      );
 
       if (isClosed) return;
 
-      emit(state.copyWith(
-        isLoading: false,
-        mySenderType: senderType,
-        messages: page.messages,
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          mySenderType: senderType,
+          mySenderId: senderId,
+          messages: page.messages,
+        ),
+      );
 
       await _connectSocket();
+      await _socketService.sendReadEvent();
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(
-        isLoading: false,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isLoading: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
@@ -117,26 +135,78 @@ class ChatRoomCubit extends Cubit<ChatRoomState> {
 
       if (isClosed) return;
 
-      emit(state.copyWith(
-        isSending: false,
-        messages: _appendMessage(state.messages, message),
-      ));
+      emit(
+        state.copyWith(
+          isSending: false,
+          messages: _appendMessage(state.messages, message),
+        ),
+      );
 
       await _socketService.sendReadEvent();
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(
-        isSending: false,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isSending: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
+    }
+  }
+
+  Future<void> sendImage(File imageFile) async {
+    if (state.isSending) {
+      return;
+    }
+
+    emit(state.copyWith(isSending: true, errorMessage: null));
+
+    try {
+      final uploadResponse = await NhomNguyenLieuService.uploadImages(
+        files: [imageFile],
+        folder: 'chat',
+      );
+
+      if (!uploadResponse.success || uploadResponse.urls.isEmpty) {
+        throw Exception(uploadResponse.message ?? 'Không thể tải ảnh lên');
+      }
+
+      final message = await _chatService.sendMessage(
+        conversationId,
+        imageUrl: uploadResponse.urls.first,
+      );
+
+      if (isClosed) return;
+
+      emit(
+        state.copyWith(
+          isSending: false,
+          messages: _appendMessage(state.messages, message),
+        ),
+      );
+
+      await _socketService.sendReadEvent();
+    } catch (e) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          isSending: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
   Future<void> refreshMessages() async {
     try {
-      final page = await _chatService.getMessages(conversationId, page: 1, limit: 50);
+      final page = await _chatService.getMessages(
+        conversationId,
+        page: 1,
+        limit: 50,
+      );
       if (isClosed) return;
       emit(state.copyWith(messages: page.messages));
+      await _socketService.sendReadEvent();
     } catch (_) {
       // Keep current messages when refresh fails.
     }
@@ -150,17 +220,16 @@ class ChatRoomCubit extends Cubit<ChatRoomState> {
     try {
       await _socketService.connect(conversationId);
       if (isClosed) return;
-      emit(state.copyWith(
-        isSocketConnected: true,
-        isReconnecting: false,
-      ));
+      emit(state.copyWith(isSocketConnected: true, isReconnecting: false));
     } catch (e) {
       if (isClosed) return;
-      emit(state.copyWith(
-        isSocketConnected: false,
-        isReconnecting: false,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      ));
+      emit(
+        state.copyWith(
+          isSocketConnected: false,
+          isReconnecting: false,
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ),
+      );
     }
   }
 
@@ -188,12 +257,19 @@ class ChatRoomCubit extends Cubit<ChatRoomState> {
       final data = event['data'];
       if (data is Map<String, dynamic>) {
         final incoming = ChatMessageModel.fromJson(data);
-        emit(state.copyWith(messages: _appendMessage(state.messages, incoming)));
+        emit(
+          state.copyWith(messages: _appendMessage(state.messages, incoming)),
+        );
       }
       return;
     }
 
-    if (type == 'typing' || type == 'message.read' || type == 'pong') {
+    if (type == 'typing' || type == 'pong') {
+      return;
+    }
+
+    if (type == 'message.read') {
+      refreshMessages();
       return;
     }
 

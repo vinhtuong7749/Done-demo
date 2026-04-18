@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/widgets/error_state_view.dart';
 import '../cubit/chat_room_cubit.dart';
 
@@ -102,8 +106,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             itemCount: state.messages.length,
                             itemBuilder: (context, index) {
                               final message = state.messages[index];
+                              final mySenderId = state.mySenderId?.trim();
                               final isMine =
-                                  message.senderType == state.mySenderType;
+                                  mySenderId != null && mySenderId.isNotEmpty
+                                  ? message.senderId == mySenderId
+                                  : message.senderType == state.mySenderType;
 
                               return Align(
                                 alignment: isMine
@@ -136,15 +143,36 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                       if (message.imageUrl != null &&
                                           message.imageUrl!.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 8,
+                                          padding: EdgeInsets.only(
+                                            top:
+                                                message.messageText != null &&
+                                                    message
+                                                        .messageText!
+                                                        .isNotEmpty
+                                                ? 8
+                                                : 0,
                                           ),
-                                          child: Text(
-                                            message.imageUrl!,
-                                            style: const TextStyle(
-                                              color: Colors.blue,
-                                              decoration:
-                                                  TextDecoration.underline,
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Image.network(
+                                              _resolveImageUrl(
+                                                message.imageUrl!,
+                                              ),
+                                              width: 180,
+                                              height: 180,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) =>
+                                                  Container(
+                                                    width: 180,
+                                                    height: 70,
+                                                    color: Colors.grey.shade200,
+                                                    alignment: Alignment.center,
+                                                    child: const Text(
+                                                      'Không tải được ảnh',
+                                                    ),
+                                                  ),
                                             ),
                                           ),
                                         ),
@@ -175,6 +203,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
                     child: Row(
                       children: [
+                        IconButton(
+                          tooltip: 'Gửi ảnh',
+                          onPressed: state.isSending
+                              ? null
+                              : () => _showImagePickerOptions(context),
+                          icon: const Icon(Icons.image_outlined),
+                        ),
                         Expanded(
                           child: TextField(
                             controller: _textController,
@@ -220,6 +255,70 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     context.read<ChatRoomCubit>().sendMessage(text);
     _textController.clear();
+  }
+
+  void _showImagePickerOptions(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Chọn từ thư viện'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickImage(context, ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Chụp ảnh'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _pickImage(context, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+
+    if (pickedFile == null || !context.mounted) {
+      return;
+    }
+
+    await context.read<ChatRoomCubit>().sendImage(File(pickedFile.path));
+  }
+
+  String _resolveImageUrl(String rawUrl) {
+    final value = rawUrl.trim();
+    if (value.isEmpty) {
+      return value;
+    }
+
+    final uri = Uri.tryParse(value);
+    if (uri == null) {
+      return value;
+    }
+
+    if (!uri.hasScheme) {
+      return '${AppConfig.imageBaseUrl}${value.startsWith('/') ? '' : '/'}$value';
+    }
+
+    if (uri.path.startsWith('/uploads/')) {
+      return '${AppConfig.imageBaseUrl}${uri.path}';
+    }
+
+    return value;
   }
 
   String _formatTime(DateTime time) {
