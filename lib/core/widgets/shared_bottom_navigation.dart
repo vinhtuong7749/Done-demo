@@ -17,64 +17,71 @@ class SharedBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
+      height: 84,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildNavItem(
-            context,
-            icon: 'assets/img/add_home.svg',
-            label: 'Trang chủ',
-            index: 0,
-            currentIndex: currentIndex,
-            route: RouteName.home,
-            isImage: false,
+          Expanded(
+            child: _buildNavItem(
+              context,
+              icon: 'assets/img/add_home.svg',
+              label: 'Trang chủ',
+              index: 0,
+              currentIndex: currentIndex,
+              route: RouteName.home,
+            ),
           ),
-          _buildNavItem(
-            context,
-            icon: 'assets/img/mon_an_icon.png',
-            label: 'Món ăn',
-            index: 1,
-            currentIndex: currentIndex,
-            route: RouteName.productList,
-            isImage: true,
+          Expanded(
+            child: _buildNavItem(
+              context,
+              icon: 'assets/img/mon_an_icon.png',
+              label: 'Món ăn',
+              index: 1,
+              currentIndex: currentIndex,
+              route: RouteName.productList,
+              isImage: true,
+            ),
           ),
-          // Logo App ở giữa (không điều hướng)
-          _buildNavItem(
-            context,
-            icon: 'assets/img/user_personas_presentation-26cd3a.png',
-            label: '',
-            index: 2,
-            currentIndex: currentIndex,
-            isCenter: true,
+          Expanded(
+            child: _buildNavItem(
+              context,
+              icon: '',
+              iconData: Icons.restaurant_menu_rounded,
+              label: 'Thực đơn',
+              index: 2,
+              currentIndex: currentIndex,
+              route: RouteName.menu,
+            ),
           ),
-          _buildNavItem(
-            context,
-            icon: 'assets/img/ingredient.png',
-            label: 'Nguyên liệu',
-            index: 3,
-            currentIndex: currentIndex,
-            route: RouteName.ingredient,
-            isImage: true,
+          Expanded(
+            child: _buildNavItem(
+              context,
+              icon: 'assets/img/ingredient.png',
+              label: 'Ng.lệu',
+              index: 3,
+              currentIndex: currentIndex,
+              route: RouteName.ingredient,
+              isImage: true,
+            ),
           ),
-          _buildNavItem(
-            context,
-            icon: 'assets/img/account_circle.svg',
-            label: 'Tài khoản',
-            index: 4,
-            currentIndex: currentIndex,
-            route: RouteName.user,
-            isImage: false,
+          Expanded(
+            child: _buildNavItem(
+              context,
+              icon: 'assets/img/account_circle.svg',
+              label: 'Tài khoản',
+              index: 4,
+              currentIndex: currentIndex,
+              route: RouteName.user,
+            ),
           ),
         ],
       ),
@@ -91,27 +98,25 @@ class SharedBottomNavigation extends StatelessWidget {
     String? route,
     bool isImage = false,
     bool isCenter = false,
+    IconData? iconData,
   }) {
     final isSelected = index == currentIndex;
-    
+
     return InkWell(
       onTap: () {
-        // Nếu đã được chọn, không làm gì
-        if (isSelected) return;
-        
-        // Gọi callback để thay đổi tab
+        if (isSelected || isCenter) return;
         onTap?.call(index);
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 6),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             if (isCenter)
               Container(
-                width: 58,
-                height: 67,
+                width: 46,
+                height: 54,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
@@ -121,32 +126,48 @@ class SharedBottomNavigation extends StatelessWidget {
                 ),
               )
             else ...[
-              isImage
-                  ? Image.asset(
-                      icon,
-                      width: 30,
-                      height: 30,
-                      color: isSelected ? const Color(0xFF00B40F) : null,
-                    )
-                  : SvgPicture.asset(
-                      icon,
-                      width: 30,
-                      height: 30,
-                      colorFilter: ColorFilter.mode(
-                        isSelected ? const Color(0xFF00B40F) : const Color(0xFF000000),
-                        BlendMode.srcIn,
-                      ),
-                    ),
+              if (iconData != null)
+                Icon(
+                  iconData,
+                  size: 24,
+                  color: isSelected
+                      ? const Color(0xFF00B40F)
+                      : const Color(0xFF000000),
+                )
+              else if (isImage)
+                Image.asset(
+                  icon,
+                  width: 28,
+                  height: 28,
+                  color: isSelected ? const Color(0xFF00B40F) : null,
+                )
+              else
+                SvgPicture.asset(
+                  icon,
+                  width: 24,
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                    isSelected
+                        ? const Color(0xFF00B40F)
+                        : const Color(0xFF000000),
+                    BlendMode.srcIn,
+                  ),
+                ),
               if (label.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
                   label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: 'Roboto',
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    fontSize: 12,
-                    height: 1.33,
-                    color: isSelected ? const Color(0xFF00B40F) : const Color(0xFF000000),
+                    fontSize: 10,
+                    height: 1.2,
+                    color: isSelected
+                        ? const Color(0xFF00B40F)
+                        : const Color(0xFF000000),
                   ),
                 ),
               ],

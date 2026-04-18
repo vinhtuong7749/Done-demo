@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
+import '../models/generated_menu_models.dart';
 import '../utils/app_logger.dart';
 
 /// Service để lưu trữ dữ liệu cục bộ sử dụng SharedPreferences
 class LocalStorageService {
+  static const String _savedMenuPlansKey = 'saved_ai_menu_plans';
   static LocalStorageService? _instance;
   static SharedPreferences? _prefs;
 
@@ -154,6 +156,49 @@ class LocalStorageService {
       return await prefs.remove(AppConfig.userKey);
     } catch (e) {
       AppLogger.error('Error removing user data', e);
+      return false;
+    }
+  }
+
+  // ==================== Saved Menu Plans ====================
+
+  Future<bool> saveMenuPlans(List<SavedMenuCollection> plans) async {
+    try {
+      final jsonString = jsonEncode(
+        plans.map((item) => item.toJson()).toList(),
+      );
+      return await prefs.setString(_savedMenuPlansKey, jsonString);
+    } catch (e) {
+      AppLogger.error('Error saving menu plans', e);
+      return false;
+    }
+  }
+
+  List<SavedMenuCollection> getSavedMenuPlans() {
+    try {
+      final jsonString = prefs.getString(_savedMenuPlansKey);
+      if (jsonString == null || jsonString.isEmpty) {
+        return [];
+      }
+
+      final decoded = jsonDecode(jsonString) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(SavedMenuCollection.fromJson)
+          .toList();
+    } catch (e) {
+      AppLogger.error('Error getting menu plans', e);
+      return [];
+    }
+  }
+
+  Future<bool> deleteSavedMenuPlan(String localId) async {
+    try {
+      final plans = getSavedMenuPlans();
+      plans.removeWhere((item) => item.localId == localId);
+      return await saveMenuPlans(plans);
+    } catch (e) {
+      AppLogger.error('Error deleting menu plan', e);
       return false;
     }
   }

@@ -46,7 +46,8 @@ class AppRouter {
   AppRouter._();
 
   /// Global navigator key to access navigator without context
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   /// Generate route based on route settings
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -89,6 +90,9 @@ class AppRouter {
 
       case RouteName.productDetail:
         return _buildRoute(settings, const ProductDetailScreen());
+
+      case RouteName.menu:
+        return _buildRoute(settings, const MainScreen(initialIndex: 2));
 
       case RouteName.menuDetail:
         return _buildRoute(settings, const MenuDetailScreen());
@@ -155,7 +159,10 @@ class AppRouter {
         return _buildRoute(settings, const AllShopsScreen());
 
       case RouteName.profile:
-        return _buildRoute(settings, const _PlaceholderScreen(title: 'Profile Screen'));
+        return _buildRoute(
+          settings,
+          const _PlaceholderScreen(title: 'Profile Screen'),
+        );
 
       case RouteName.editProfile:
         return _buildRoute(settings, const EditProfilePage());
@@ -174,11 +181,14 @@ class AppRouter {
         } else if (args is Map) {
           // Mới: có cả shopId và suggestedProducts
           shopId = args['shopId'] as String? ?? '';
-          suggestedProducts = args['suggestedProducts'] as List<ShopProductPreview>?;
+          suggestedProducts =
+              args['suggestedProducts'] as List<ShopProductPreview>?;
           if (AppConfig.enableApiLogging) {
             AppLogger.info('🏪 [ROUTER] Shop navigation (Map):');
             AppLogger.info('   shopId: $shopId');
-            AppLogger.info('   suggestedProducts: ${suggestedProducts?.length ?? 0} items');
+            AppLogger.info(
+              '   suggestedProducts: ${suggestedProducts?.length ?? 0} items',
+            );
           }
         }
 
@@ -197,14 +207,20 @@ class AppRouter {
       case RouteName.sellerMain:
       case RouteName.sellerHome:
         final initialIndex = settings.arguments as int? ?? 0;
-        return _buildRoute(settings, SellerMainScreen(initialIndex: initialIndex));
+        return _buildRoute(
+          settings,
+          SellerMainScreen(initialIndex: initialIndex),
+        );
 
       case RouteName.sellerAddIngredient:
         return _buildRoute(settings, const AddIngredientScreen());
 
       case RouteName.sellerUpdateIngredient:
         final ingredient = settings.arguments as SellerIngredient;
-        return _buildRoute(settings, UpdateIngredientScreen(ingredient: ingredient));
+        return _buildRoute(
+          settings,
+          UpdateIngredientScreen(ingredient: ingredient),
+        );
 
       case RouteName.sellerUser:
         return _buildRoute(settings, const SellerUserScreen());
@@ -244,16 +260,37 @@ class AppRouter {
     return MaterialPageRoute(builder: (_) => page, settings: settings);
   }
 
-  static Future<T?> navigateTo<T>(BuildContext context, String routeName, {Object? arguments}) {
+  static Future<T?> navigateTo<T>(
+    BuildContext context,
+    String routeName, {
+    Object? arguments,
+  }) {
     return Navigator.pushNamed<T>(context, routeName, arguments: arguments);
   }
 
-  static Future<T?> navigateAndRemoveUntil<T>(BuildContext context, String routeName, {Object? arguments}) {
-    return Navigator.pushNamedAndRemoveUntil<T>(context, routeName, (route) => false, arguments: arguments);
+  static Future<T?> navigateAndRemoveUntil<T>(
+    BuildContext context,
+    String routeName, {
+    Object? arguments,
+  }) {
+    return Navigator.pushNamedAndRemoveUntil<T>(
+      context,
+      routeName,
+      (route) => false,
+      arguments: arguments,
+    );
   }
 
-  static Future<T?> navigateAndReplace<T>(BuildContext context, String routeName, {Object? arguments}) {
-    return Navigator.pushReplacementNamed<T, void>(context, routeName, arguments: arguments);
+  static Future<T?> navigateAndReplace<T>(
+    BuildContext context,
+    String routeName, {
+    Object? arguments,
+  }) {
+    return Navigator.pushReplacementNamed<T, void>(
+      context,
+      routeName,
+      arguments: arguments,
+    );
   }
 
   static void goBack(BuildContext context, {Object? result}) {
@@ -275,7 +312,11 @@ class _PlaceholderScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.construction, size: 64, color: Theme.of(context).primaryColor),
+            Icon(
+              Icons.construction,
+              size: 64,
+              color: Theme.of(context).primaryColor,
+            ),
             const SizedBox(height: 16),
             Text(title, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 24),
@@ -302,9 +343,16 @@ class _NotFoundScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(height: 16),
-            Text('Không tìm thấy trang', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Không tìm thấy trang',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => AppRouter.goBack(context),

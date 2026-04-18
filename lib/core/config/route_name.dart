@@ -8,7 +8,7 @@ class RouteName {
   static const String onboarding = '/onboarding';
   static const String main = '/main';
   static const String home = '/home';
-  
+
   // Seller Routes
   static const String sellerMain = '/seller/main';
   static const String sellerHome = '/seller/home';
@@ -39,6 +39,7 @@ class RouteName {
   static const String productDetail = '/product-detail';
   static const String productSearch = '/product-search';
   static const String productFilter = '/product-filter';
+  static const String menu = '/menu';
   static const String menuDetail = '/menu-detail';
   static const String search = '/search';
   static const String categoryProducts = '/category-products';
@@ -47,8 +48,6 @@ class RouteName {
   static const String ingredient = '/ingredient';
   static const String ingredientDetail = '/ingredient-detail';
   static const String shop = '/shop';
-
-
 
   // Category Routes
   static const String categoryList = '/categories';
