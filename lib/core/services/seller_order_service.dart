@@ -101,34 +101,64 @@ class SellerOrderService {
     }
   }
 
-  /// Xác nhận đơn hàng
-  Future<ConfirmOrderResponse> confirmOrder(String maDonHang) async {
+  /// Xác nhận từng item trong đơn hàng
+  /// API: PATCH /seller/orders/{order_id}/items/{ingredient_id}/confirm
+  Future<bool> _confirmItem(String token, String orderId, String ingredientId) async {
+    final uri = Uri.parse('$_baseUrl/orders/$orderId/items/$ingredientId/confirm');
+    debugPrint('📦 [SELLER ORDER] PATCH $uri');
+    
+    final response = await http.patch(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: json.encode({'action': 'da_duyet'}),
+    );
+    
+    debugPrint('📦 [SELLER ORDER] Item confirm response: ${response.statusCode} - ${utf8.decode(response.bodyBytes)}');
+    return response.statusCode == 200;
+  }
+
+  /// Xác nhận đơn hàng (gọi confirm cho tất cả items)
+  Future<ConfirmOrderResponse> confirmOrder(String maDonHang, {List<String> ingredientIds = const []}) async {
     try {
       final token = await getToken();
       if (token == null) {
         throw Exception('User not logged in');
       }
 
-      final uri = Uri.parse('$_baseUrl/orders/$maDonHang/confirm');
-      
-      debugPrint('📦 [SELLER ORDER] POST $uri');
-
-      final response = await http.post(
-        uri,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-      );
-
-      debugPrint('📦 [SELLER ORDER] Confirm response: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(utf8.decode(response.bodyBytes));
-        return ConfirmOrderResponse.fromJson(jsonData);
-      } else {
-        throw Exception('Failed to confirm order: ${response.statusCode}');
+      if (ingredientIds.isEmpty) {
+        // Thử lấy chi tiết đơn hàng để có danh sách ingredients
+        try {
+          final detail = await getOrderDetail(maDonHang);
+          if (detail.data != null) {
+            ingredientIds = detail.data!.chiTietDonHang
+                .map((item) => item.maNguyenLieu)
+                .where((id) => id.isNotEmpty)
+                .toList();
+          }
+        } catch (e) {
+          debugPrint('⚠️ [SELLER ORDER] Could not get order detail: $e');
+        }
       }
+
+      if (ingredientIds.isEmpty) {
+        throw Exception('Không có sản phẩm nào trong đơn hàng để xác nhận');
+      }
+
+      debugPrint('📦 [SELLER ORDER] Confirming ${ingredientIds.length} items for order $maDonHang');
+      
+      bool allSuccess = true;
+      for (final ingredientId in ingredientIds) {
+        final success = await _confirmItem(token, maDonHang, ingredientId);
+        if (!success) allSuccess = false;
+      }
+
+      return ConfirmOrderResponse(
+        success: allSuccess,
+        message: allSuccess ? 'Đã xác nhận đơn hàng thành công' : 'Một số sản phẩm không xác nhận được',
+      );
     } catch (e) {
       debugPrint('❌ [SELLER ORDER] Confirm error: $e');
       rethrow;

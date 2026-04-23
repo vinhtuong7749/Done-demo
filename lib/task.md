@@ -1,0 +1,12 @@
+- `[x]` 1. Backend FastAPI: Cập nhật API trả về chi tiết sản phẩm.
+  - `[x]` 1.1 Thêm `detail_status` và `cancel_reason` vào hàm `get_order_detail` trong `app/repositories/order.py`.
+- `[x]` 2. Frontend Flutter: Cập nhật Model và Service.
+  - `[x]` 2.1 Cập nhật `OrderItemDetail` trong `order_model.dart` chứa `detailStatus`, `cancelReason`.
+  - `[x]` 2.2 Thêm `RefundRequest` và `RefundItem` model (hoặc tạo DTO request map) vào service.
+  - `[x]` 2.3 Thêm API call `refundOrder` trong `order_service.dart`.
+- `[x]` 3. Frontend Flutter: Cập nhật Cubit.
+  - `[x]` 3.1 Thêm Event/State/Function `requestRefund` vào `order_detail_cubit.dart` và `order_detail_state.dart`.
+- `[x]` 4. Frontend Flutter: UI Refund Dialog & Giao diện hiện Order.
+  - `[x]` 4.1 Tạo widget form dialog `refund_dialog.dart` chọn item và cung cấp lý do hoàn.
+  - `[x]` 4.2 Thêm button "Yêu cầu hoàn tiền" vào Màn hình Chi tiết Đơn hàng `order_detail_page.dart`.
+  - `[x]` 4.3 Cập nhật Card Render OrderItem hiển thị tag nếu Status = `"hoan_hang"`.

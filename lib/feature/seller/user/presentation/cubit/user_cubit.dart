@@ -6,6 +6,7 @@ import '../../../../../core/services/user_profile_service.dart';
 import '../../../../../core/services/nhom_nguyen_lieu_service.dart';
 import '../../../../../core/services/seller_order_service.dart';
 import '../../../../../core/services/gian_hang_service.dart';
+import '../../../../../core/config/app_config.dart';
 import 'user_state.dart';
 
 class SellerUserCubit extends Cubit<SellerUserState> {
@@ -25,23 +26,21 @@ class SellerUserCubit extends Cubit<SellerUserState> {
       final profileResponse = await _profileService.getProfile();
       final profile = profileResponse.data;
       
-      // 2. Lấy số lượng sản phẩm và mã gian hàng
+      // 2. Lấy thông tin user (để lấy stallId)
+      final user = await _authService.getCurrentUser();
+      String? maGianHang = user.stallId;
+
       int productCount = 0;
-      String? maGianHang;
-      try {
-        final productsResponse = await NhomNguyenLieuService.getSellerProducts(limit: 1);
-        productCount = productsResponse.meta.total;
-        if (productsResponse.data.isNotEmpty) {
-          maGianHang = productsResponse.data[0]['ma_gian_hang'];
-        }
-      } catch (e) {
-        // Log error but continue
+      if (maGianHang == null || maGianHang.isEmpty) {
+        maGianHang = profile.maNguoiDung;
       }
 
       // 3. Lấy thông tin gian hàng (Chợ và Mã gian hàng)
       String marketName = 'Chưa cập nhật';
       String stallNumber = 'Chưa cập nhật';
       String shopName = profile.tenNguoiDung;
+      double rating = 5.0;
+      String? avatarUrl;
 
       if (maGianHang != null) {
         try {
@@ -50,16 +49,32 @@ class SellerUserCubit extends Cubit<SellerUserState> {
             marketName = shopDetail.detail.cho?.tenCho ?? 'Chưa cập nhật';
             stallNumber = shopDetail.detail.maGianHang;
             shopName = shopDetail.detail.tenGianHang;
+            rating = shopDetail.detail.danhGiaTb > 0 ? shopDetail.detail.danhGiaTb : 5.0;
+            final checkResp = await NhomNguyenLieuService.getSellerProducts(limit: 1);
+            productCount = checkResp.meta.total;
+            
+            final apiAvatar = shopDetail.detail.hinhAnh;
+            if (apiAvatar != null && apiAvatar.isNotEmpty) {
+               avatarUrl = apiAvatar.startsWith('http') 
+                   ? apiAvatar 
+                   : '${AppConfig.imageBaseUrl}$apiAvatar';
+            }
+          } else {
+            // Cứu cánh nếu shopDetail lỗi: lấy length thực tế
+            final checkResp = await NhomNguyenLieuService.getSellerProducts(limit: 1);
+            productCount = checkResp.meta.total;
           }
         } catch (e) {
           // Log error but continue
+          final checkResp = await NhomNguyenLieuService.getSellerProducts(limit: 1);
+          productCount = checkResp.meta.total;
         }
       }
 
       // 4. Lấy số lượng đơn hàng đã bán (đã hoàn thành)
       int soldCount = 0;
       try {
-        final ordersResponse = await _orderService.getOrders(limit: 1, status: 'da_giao', maGianHang: maGianHang);
+        final ordersResponse = await _orderService.getOrders(limit: 1, status: 'hoan_tat', maGianHang: maGianHang);
         if (ordersResponse.success) {
           soldCount = ordersResponse.pagination.total;
         }
@@ -73,6 +88,8 @@ class SellerUserCubit extends Cubit<SellerUserState> {
           profile, 
           productCount: productCount, 
           soldCount: soldCount,
+          rating: rating,
+          avatarUrl: avatarUrl,
         ).copyWith(
           marketName: marketName,
           stallNumber: stallNumber,

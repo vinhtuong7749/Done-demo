@@ -253,6 +253,35 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
 
           // Nguyên liệu (luôn hiển thị)
           if (state.nguyenLieu != null && state.nguyenLieu!.isNotEmpty) ...[
+            SizedBox(
+              width: double.infinity,
+              height: 40,
+              child: ElevatedButton.icon(
+                onPressed: () => _addAllToCart(context, state.nguyenLieu!, 'mục'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF26CD3A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                icon: const Icon(
+                  Icons.add_shopping_cart,
+                  color: Colors.white,
+                  size: 18,
+                ),
+                label: const Text(
+                  'Thêm tất cả vào giỏ',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             const Text(
               'Nguyên liệu:',
               style: TextStyle(
@@ -605,12 +634,12 @@ class _ProductDetailViewState extends State<_ProductDetailView> {
         final label = sectionLabel.toLowerCase();
         String message;
         if (result.success > 0 && result.failed == 0) {
-          message = 'Đã thêm ${result.success} $label vào giỏ hàng';
+          message = 'Đã thêm tất cả ${result.success} $label vào giỏ hàng';
         } else if (result.success > 0 && result.failed > 0) {
-          message =
-              'Đã thêm ${result.success} $label, ${result.failed} mục thất bại';
+          final skippedNames = result.errors.map((e) => e.split(':').first).join(', ');
+          message = 'Đã thêm ${result.success} $label. Bỏ qua: $skippedNames (hết hàng)';
         } else {
-          message = 'Không thể thêm $label vào giỏ hàng';
+          message = 'Không thể thêm phần nào (đều đã hết hàng hoặc không khả dụng).';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(

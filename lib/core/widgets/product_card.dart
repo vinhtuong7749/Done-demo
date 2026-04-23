@@ -8,6 +8,7 @@ class ProductCard extends StatelessWidget {
   final String price;
   final String soldCount;
   final String imagePath;
+  final VoidCallback? onTap;
   final VoidCallback? onFavoriteTap;
   final VoidCallback? onAddToCart;
   final VoidCallback? onBuyNow;
@@ -18,6 +19,7 @@ class ProductCard extends StatelessWidget {
     required this.price,
     required this.soldCount,
     required this.imagePath,
+    this.onTap,
     this.onFavoriteTap,
     this.onAddToCart,
     this.onBuyNow,
@@ -26,9 +28,7 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.pushNamed(context, RouteName.productDetail);
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

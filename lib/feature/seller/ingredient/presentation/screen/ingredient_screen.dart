@@ -23,7 +23,7 @@ class _SellerIngredientView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF8F9FA), // Nền sáng nhẹ nhàng
       body: BlocBuilder<SellerIngredientCubit, SellerIngredientState>(
         builder: (context, state) {
           return SafeArea(
@@ -38,189 +38,99 @@ class _SellerIngredientView extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => AppRouter.navigateTo(context, RouteName.sellerAddIngredient),
-        backgroundColor: const Color(0xFF00B40F),
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: const Color(0xFF00C800),
+        elevation: 6,
+        icon: const Icon(Icons.add_circle_outline, color: Colors.white),
+        label: const Text(
+          'Thêm mới', 
+          style: TextStyle(
+            fontFamily: 'Inter',
+            color: Colors.white, 
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          )
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
     );
   }
 
-  /// Header với gradient và search
+  /// Header thiết kế lại hiện đại, nền trắng tinh giản
   Widget _buildHeader(BuildContext context, SellerIngredientState state) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF00B40F), Color(0xFF4CAF50)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
-      ),
-      child: Column(
-        children: [
-          // Title bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.store,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'QUẢN LÝ SẢN PHẨM',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w700,
-                          fontSize: 18,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Gian hàng của bạn',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 13,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Notification icon
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.notifications_outlined, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                onChanged: (value) {
-                  context.read<SellerIngredientCubit>().updateSearchQuery(value);
-                },
-                style: const TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 15,
-                  color: Colors.black87,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Tìm kiếm sản phẩm...',
-                  hintStyle: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 15,
-                    color: Colors.grey[400],
-                  ),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-              ),
-            ),
-          ),
-          // Stats row
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Row(
-              children: [
-                _buildStatItem(
-                  icon: Icons.inventory_2_outlined,
-                  label: 'Tổng SP',
-                  value: '${state.filteredIngredients.length}',
-                ),
-                const SizedBox(width: 12),
-                _buildStatItem(
-                  icon: Icons.check_circle_outline,
-                  label: 'Còn hàng',
-                  value: '${state.filteredIngredients.where((i) => i.availableQuantity > 0).length}',
-                ),
-                const SizedBox(width: 12),
-                _buildStatItem(
-                  icon: Icons.warning_amber_outlined,
-                  label: 'Hết hàng',
-                  value: '${state.filteredIngredients.where((i) => i.availableQuantity == 0).length}',
-                  isWarning: true,
-                ),
-              ],
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-    );
-  }
-
-  /// Stat item widget
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    bool isWarning = false,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isWarning ? Colors.amber[100] : Colors.white,
-              size: 20,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Sản phẩm',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 32,
+                  color: Color(0xFF1B5E20),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${state.filteredIngredients.length} SP',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14, 
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF00C800),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // Search bar
+          Container(
+            height: 52,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F7F5),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE0E0E0)),
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: 'Roboto',
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                color: Colors.white,
+            child: TextField(
+              onChanged: (value) => context.read<SellerIngredientCubit>().updateSearchQuery(value),
+              style: const TextStyle(fontSize: 15, color: Colors.black87, fontFamily: 'Inter'),
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm tên sản phẩm...',
+                hintStyle: TextStyle(fontSize: 15, color: Colors.grey[400], fontFamily: 'Inter'),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF00C800), size: 24),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
               ),
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 11,
-                color: Colors.white70,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -229,7 +139,7 @@ class _SellerIngredientView extends StatelessWidget {
   Widget _buildBody(BuildContext context, SellerIngredientState state) {
     if (state.isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF00B40F)),
+        child: CircularProgressIndicator(color: Color(0xFF00C800)),
       );
     }
 
@@ -244,17 +154,18 @@ class _SellerIngredientView extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 state.errorMessage!,
-                style: const TextStyle(color: Colors.red),
+                style: const TextStyle(color: Colors.red, fontFamily: 'Inter'),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: () => context.read<SellerIngredientCubit>().refreshData(),
                 icon: const Icon(Icons.refresh),
-                label: const Text('Thử lại'),
+                label: const Text('Thử lại', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF00B40F),
+                  backgroundColor: const Color(0xFF00C800),
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
               ),
             ],
@@ -275,17 +186,17 @@ class _SellerIngredientView extends StatelessWidget {
             Text(
               'Chưa có sản phẩm nào',
               style: TextStyle(
-                fontFamily: 'Roboto',
+                fontFamily: 'Inter',
                 fontSize: 18,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.bold,
                 color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Nhấn nút + để thêm sản phẩm mới',
+              'Nhấn "Thêm mới" để cập nhật sản phẩm',
               style: TextStyle(
-                fontFamily: 'Roboto',
+                fontFamily: 'Inter',
                 fontSize: 14,
                 color: Colors.grey[400],
               ),
@@ -297,9 +208,9 @@ class _SellerIngredientView extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () => context.read<SellerIngredientCubit>().refreshData(),
-      color: const Color(0xFF00B40F),
+      color: const Color(0xFF00C800),
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(top: 24, left: 20, right: 20, bottom: 100), // padding bottom để không bị che bởi FAB
         itemCount: ingredients.length,
         itemBuilder: (context, index) {
           return TweenAnimationBuilder<double>(
@@ -327,17 +238,21 @@ class _SellerIngredientView extends StatelessWidget {
     final isOutOfStock = ingredient.availableQuantity == 0;
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: isOutOfStock ? Colors.red.withValues(alpha: 0.3) : Colors.transparent,
+          width: 1,
+        )
       ),
       child: Material(
         color: Colors.transparent,
@@ -352,151 +267,122 @@ class _SellerIngredientView extends StatelessWidget {
               context.read<SellerIngredientCubit>().refreshData();
             }
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Hình ảnh sản phẩm
-                Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
+                // Hình ảnh sản phẩm (Bo tròn lớn hơn)
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: Colors.grey[100],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      )
+                    ]
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.network(
                           ingredient.imageUrl,
-                          width: 80,
-                          height: 80,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 80,
-                              height: 80,
-                              color: Colors.grey[100],
-                              child: Icon(Icons.image, size: 32, color: Colors.grey[400]),
-                            );
-                          },
+                          errorBuilder: (_, __, ___) => Icon(Icons.inventory_2_outlined, size: 32, color: Colors.grey[350]),
                         ),
-                      ),
-                    ),
-                    if (isOutOfStock)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
+                        if (isOutOfStock)
+                          Container(
                             color: Colors.black.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'HẾT',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                            child: const Center(
+                              child: Text(
+                                'HẾT',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 // Thông tin sản phẩm
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // ID badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF00B40F).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'ID: ${ingredient.id}',
-                          style: const TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF00B40F),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Tên sản phẩm
                       Text(
                         ingredient.name,
                         style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: Colors.black87,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Color(0xFF2C3E50),
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       // Giá
                       Row(
                         children: [
                           Text(
                             ingredient.formattedPrice,
                             style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: Color(0xFFE53935),
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                              color: Color(0xFF00C800),
                             ),
                           ),
-                          if (ingredient.hasDiscount) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.red[50],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '-${ingredient.discountPercent}%',
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red[600],
-                                ),
-                              ),
+                          const Text(
+                            ' / ',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                          Text(
+                            ingredient.unit,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              color: Colors.grey,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      // Thông tin kho
-                      Row(
+                      const SizedBox(height: 10),
+                      // Kho & ID
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
-                          _buildInfoChip(
-                            icon: Icons.inventory_2_outlined,
-                            text: '${ingredient.availableQuantity}',
-                            isWarning: isOutOfStock,
+                          _buildModernChip(
+                            icon: Icons.inventory_2,
+                            text: 'Kho: ${ingredient.availableQuantity}',
+                            color: isOutOfStock ? Colors.red : const Color(0xFF4FC3F7),
                           ),
-                          const SizedBox(width: 8),
-                          _buildInfoChip(
-                            icon: Icons.straighten,
-                            text: ingredient.unit,
+                          _buildModernChip(
+                            icon: Icons.tag,
+                            text: ingredient.id,
+                            color: Colors.grey,
+                            isOutlined: true,
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                // Action buttons
+                // Nút thao tác dọc
                 Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
                       onPressed: () async {
@@ -509,15 +395,22 @@ class _SellerIngredientView extends StatelessWidget {
                           context.read<SellerIngredientCubit>().refreshData();
                         }
                       },
-                      icon: const Icon(Icons.edit_outlined),
-                      color: Colors.grey[600],
-                      iconSize: 22,
+                      icon: const Icon(Icons.edit_rounded),
+                      color: const Color(0xFF00C800),
+                      style: IconButton.styleFrom(
+                        backgroundColor: const Color(0xFF00C800).withValues(alpha: 0.1),
+                      ),
+                      iconSize: 20,
                     ),
+                    const SizedBox(height: 8),
                     IconButton(
                       onPressed: () => _showDeleteConfirmation(context, ingredient),
-                      icon: const Icon(Icons.delete_outline),
+                      icon: const Icon(Icons.delete_rounded),
                       color: Colors.red[400],
-                      iconSize: 22,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.withValues(alpha: 0.1),
+                      ),
+                      iconSize: 20,
                     ),
                   ],
                 ),
@@ -529,34 +422,31 @@ class _SellerIngredientView extends StatelessWidget {
     );
   }
 
-  /// Info chip widget
-  Widget _buildInfoChip({
+  Widget _buildModernChip({
     required IconData icon,
     required String text,
-    bool isWarning = false,
+    required Color color,
+    bool isOutlined = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isWarning ? Colors.red[50] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(6),
+        color: isOutlined ? Colors.transparent : color.withValues(alpha: 0.1),
+        border: isOutlined ? Border.all(color: color.withValues(alpha: 0.3)) : null,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: isWarning ? Colors.red[400] : Colors.grey[600],
-          ),
+          Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: isWarning ? Colors.red[400] : Colors.grey[600],
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
         ],

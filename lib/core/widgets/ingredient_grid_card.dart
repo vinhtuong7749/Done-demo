@@ -165,54 +165,65 @@ class IngredientGridCard extends StatelessWidget {
 
   Widget _buildInfoSection() {
     return Padding(
-      padding: const EdgeInsets.all(8),
+      // Reduced vertical padding to prevent overflow
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // Name
-          Text(
-            name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-              color: Color(0xFF1C1C1E),
+          // Khu vực thông tin (tên, shop, giá)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name
+                Text(
+                  name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    height: 1.2,
+                    color: Color(0xFF1C1C1E),
+                  ),
+                ),
+                const SizedBox(height: 2),
+
+                // Shop Name
+                if (shopName != null && shopName!.isNotEmpty)
+                  Text(
+                    shopName!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF8E8E93),
+                    ),
+                  ),
+                
+                const Spacer(), // Đẩy chữ Giá xuống sát mí dưới của khu vực text
+
+                // Price
+                if (price != null && price!.isNotEmpty)
+                  Text(
+                    price!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFE53935), // Stitch Alert Red
+                    ),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(height: 2),
 
-          // Shop Name
-          if (shopName != null && shopName!.isNotEmpty)
-            Text(
-              shopName!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 10,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF8E8E93),
-              ),
-            ),
-          const SizedBox(height: 4),
-
-          // Price
-          if (price != null && price!.isNotEmpty)
-            Text(
-              price!,
-              style: const TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFFFF3B30),
-              ),
-            ),
-
-          const Spacer(),
+          const SizedBox(height: 4), // Khoảng cách nhỏ giữa vùng Text và nút
 
           // Action Buttons
           Row(
@@ -221,26 +232,19 @@ class IngredientGridCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: isShopOpen ? onAddToCart : null,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isShopOpen
-                            ? const Color(0xFF008EDB)
-                            : Colors.grey,
-                      ),
-                      borderRadius: BorderRadius.circular(4),
-                      color: isShopOpen ? Colors.transparent : Colors.grey[100],
+                      color: isShopOpen ? const Color(0xFFE8F5E9) : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       'Thêm',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Roboto',
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isShopOpen
-                            ? const Color(0xFF008EDB)
-                            : Colors.grey,
+                        color: isShopOpen ? const Color(0xFF00B40F) : Colors.grey,
                       ),
                     ),
                   ),
@@ -251,18 +255,21 @@ class IngredientGridCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: isShopOpen ? onBuyNow : null,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     decoration: BoxDecoration(
                       color: isShopOpen ? const Color(0xFF00B40F) : Colors.grey,
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: isShopOpen 
+                        ? [BoxShadow(color: const Color(0xFF00B40F).withOpacity(0.25), blurRadius: 4, offset: const Offset(0, 2))]
+                        : null,
                     ),
                     child: const Text(
                       'Mua',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Roboto',
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),
@@ -276,3 +283,4 @@ class IngredientGridCard extends StatelessWidget {
     );
   }
 }
+

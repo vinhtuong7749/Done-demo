@@ -341,85 +341,123 @@ class _ShopPageState extends State<ShopPage> {
   /// Header với banner xanh và avatar + tên shop đè lên
   Widget _buildShopHeader(BuildContext context, ShopInfo shopInfo) {
     return SizedBox(
-      height: 200,
+      height: 220,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          // Banner màu xanh lá
+          // Banner màu xanh lá gradient
           Container(
-            height: 140,
+            height: 160,
             width: double.infinity,
-            color: const Color(0xFF00B40F),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF00D111), Color(0xFF009C0D)],
+              ),
+            ),
+          ),
+          
+          // Tấm nền trắng bo góc chứa thông tin, đẩy lên ăn nhẹ vào banner
+          Positioned(
+            top: 140,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+            ),
           ),
 
           // Avatar và thông tin shop
           Positioned(
-            left: 16,
-            right: 16,
-            top: 100,
+            left: 20,
+            right: 20,
+            top: 95,
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Avatar
                 Container(
-                  width: 70,
-                  height: 70,
+                  width: 90,
+                  height: 90,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    shape: BoxShape.circle,
                     color: Colors.white,
-                    border: Border.all(color: Colors.white, width: 3),
+                    border: Border.all(color: Colors.white, width: 4),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                  child: ClipOval(
                     child: _buildShopImage(shopInfo.shopImage),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 // Shop name và rating
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 45),
+                    padding: const EdgeInsets.only(bottom: 4),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           shopInfo.shopName,
                           style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF202020),
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E1E1E),
+                            letterSpacing: -0.5,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.star,
-                              color: Color(0xFFFFB800),
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              shopInfo.shopRating.toStringAsFixed(1),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF202020),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF9E5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: Color(0xFFFFB800),
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    shopInfo.shopRating.toStringAsFixed(1),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFFB38000),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Text(
                               '(${shopInfo.reviewCount} đánh giá)',
                               style: const TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF8E8E93),
+                                color: Color(0xFF757575),
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
@@ -440,42 +478,61 @@ class _ShopPageState extends State<ShopPage> {
   Widget _buildShopInfoSection(BuildContext context, ShopInfo shopInfo) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 8),
           // Stats row
-          Row(
-            children: [
-              _buildStatItem(
-                Icons.inventory_2_outlined,
-                '${shopInfo.productCount}',
-                'Sản phẩm',
-              ),
-              const SizedBox(width: 24),
-              _buildStatItem(
-                Icons.rate_review_outlined,
-                '${shopInfo.reviewCount}',
-                'Đánh giá',
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFF1F3F5), width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem(
+                  Icons.inventory_2_rounded,
+                  '${shopInfo.productCount}',
+                  'Sản phẩm',
+                ),
+                Container(
+                  height: 30,
+                  width: 1,
+                  color: const Color(0xFFE9ECEF),
+                ),
+                _buildStatItem(
+                  Icons.rate_review_rounded,
+                  '${shopInfo.reviewCount}',
+                  'Đánh giá',
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Location
           if (shopInfo.cho != null)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.location_on,
-                  color: Color(0xFF00B40F),
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.location_on_rounded,
+                    color: Color(0xFF00B40F),
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -488,12 +545,13 @@ class _ShopPageState extends State<ShopPage> {
                           color: Color(0xFF202020),
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         '${shopInfo.viTri} - ${shopInfo.cho!.diaChi}',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF8E8E93),
+                          height: 1.4,
+                          color: Color(0xFF6C757D),
                         ),
                       ),
                     ],
@@ -507,22 +565,31 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Widget _buildStatItem(IconData icon, String value, String label) {
-    return Row(
+    return Column(
       children: [
-        Icon(icon, color: const Color(0xFF00B40F), size: 20),
-        const SizedBox(width: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF202020),
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: const Color(0xFF00B40F), size: 18),
+            const SizedBox(width: 6),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF212529),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 4),
+        const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF8E8E93)),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF868E96),
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );

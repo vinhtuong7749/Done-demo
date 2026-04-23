@@ -4,13 +4,7 @@ import '../cubit/signup_cubit.dart';
 import '../../../../core/dependency/injection.dart';
 import '../../../../core/services/auth/auth_service.dart';
 
-/// Màn hình đăng ký
-/// 
-/// Chức năng:
-/// - Đăng ký với tên, số điện thoại, email và mật khẩu
-/// - Validate input
-/// - Chuyển sang màn hình đăng nhập
-/// - Hiển thị/ẩn mật khẩu
+/// Màn hình đăng ký người mua / người bán
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
 
@@ -25,7 +19,6 @@ class SignUpPage extends StatelessWidget {
   }
 }
 
-/// View của màn hình đăng ký
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
 
@@ -33,17 +26,40 @@ class SignUpView extends StatefulWidget {
   State<SignUpView> createState() => _SignUpViewState();
 }
 
-class _SignUpViewState extends State<SignUpView> {
+class _SignUpViewState extends State<SignUpView>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _animController.forward();
+  }
+
   @override
   void dispose() {
+    _animController.dispose();
     _nameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -51,52 +67,90 @@ class _SignUpViewState extends State<SignUpView> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('[SIGNUP] Building SignUpView...');
-    return BlocListener<SignUpCubit, SignUpState>(
-      listener: (context, state) {
-        debugPrint('[SIGNUP] State changed: $state');
-        if (state is SignUpSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
+    return Scaffold(
+      body: BlocListener<SignUpCubit, SignUpState>(
+        listener: (context, state) {
+          if (!mounted) return;
+          if (state is SignUpSuccess) {
+            final role = context.read<SignUpCubit>().selectedRole;
+            final isSeller = role == 'nguoi_ban';
+
+            ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.green,
+              content: Row(
+                children: [
+                  Icon(
+                    isSeller ? Icons.store_outlined : Icons.check_circle_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      isSeller
+                          ? 'Đăng ký thành công! Chờ quản lý chợ tạo gian hàng để bắt đầu bán.'
+                          : 'Đăng ký thành công! Chào mừng bạn.',
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor:
+                  isSeller ? const Color(0xFFE65100) : const Color(0xFF2F8000),
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           );
           Navigator.of(context).pushReplacementNamed('/login');
         } else if (state is SignUpFailure) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage),
-              backgroundColor: Colors.red,
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(state.errorMessage)),
+                ],
+              ),
+              backgroundColor: Colors.red[700],
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           );
         }
       },
-      child: Scaffold(
-        body: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/img/splash_background.png'),
-              fit: BoxFit.cover,
-            ),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/img/splash_background.png'),
+            fit: BoxFit.cover,
           ),
-          child: Container(
-            color: Colors.white.withOpacity(0.3),
-            child: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
-                      _buildLogo(),
-                      const SizedBox(height: 30),
-                      _buildSignUpForm(),
-                      const SizedBox(height: 20),
-                    ],
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.75), // Brightens the background
+          ),
+          child: SafeArea(
+            child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        _buildLogo(),
+                        const SizedBox(height: 28),
+                        _buildCard(),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -110,139 +164,216 @@ class _SignUpViewState extends State<SignUpView> {
   Widget _buildLogo() {
     return Image.asset(
       'assets/img/splash_logo.png',
-      width: 180,
+      width: 160,
       fit: BoxFit.contain,
     );
   }
 
-  Widget _buildSignUpForm() {
+  Widget _buildCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFDCF9E4).withOpacity(0.8),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: const Color(0xFF0272BA).withOpacity(0.5),
-          width: 1,
-        ),
+        color: const Color(0xFFEBFAEC).withValues(alpha: 0.95), // Light green tint
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF4FC3F7), width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 32,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildTabHeader(),
-            const SizedBox(height: 30),
-            _buildInputField(
-              controller: _nameController,
-              hintText: 'Tên*',
-              icon: Icons.person_outline,
-              validator: (value) => context.read<SignUpCubit>().validateName(value),
+      child: Column(
+        children: [
+          // Header tabs
+          _buildHeaderTabs(),
+          // Form body
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildRoleSelection(),
+                  const SizedBox(height: 20),
+                  _buildField(
+                    controller: _nameController,
+                    hint: 'Tên',
+                    icon: Icons.person_outline_rounded,
+                    validator: (v) =>
+                        context.read<SignUpCubit>().validateName(v),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _phoneController,
+                    hint: 'Số điện thoại',
+                    icon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                    validator: (v) =>
+                        context.read<SignUpCubit>().validatePhone(v),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildField(
+                    controller: _usernameController,
+                    hint: 'Email/Tên đăng nhập',
+                    icon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (v) =>
+                        context.read<SignUpCubit>().validateEmail(v),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildPasswordField(),
+                  const SizedBox(height: 16),
+                  _buildConfirmPasswordField(),
+                  const SizedBox(height: 8),
+                  // Seller notice
+                  _buildSellerNotice(),
+                  const SizedBox(height: 24),
+                  _buildSubmitButton(),
+                  const SizedBox(height: 16),
+                  _buildLoginLink(),
+                ],
+              ),
             ),
-            const SizedBox(height: 15),
-            _buildPasswordField(),
-            const SizedBox(height: 15),
-            _buildConfirmPasswordField(),
-            const SizedBox(height: 15),
-            _buildInputField(
-              controller: _emailController,
-              hintText: 'Email*',
-              icon: Icons.email_outlined,
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) => context.read<SignUpCubit>().validateEmail(value),
-            ),
-            const SizedBox(height: 20),
-            _buildRoleSelection(),
-            const SizedBox(height: 25),
-            _buildSignUpButton(),
-            const SizedBox(height: 15),
-            _buildLoginLink(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTabHeader() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
+  Widget _buildHeaderTabs() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Đăng nhập tab (inactive)
+          GestureDetector(
             onTap: () => Navigator.of(context).pop(),
-            child: Text(
+            child: const Text(
               'Đăng nhập',
-              textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: 'Inter',
                 fontSize: 22,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF00B40F).withOpacity(0.5),
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF75B875), // Soft green
               ),
             ),
           ),
-        ),
-        Expanded(
-          child: Column(
+          // Đăng ký tab (active)
+          Column(
             children: [
               const Text(
                 'Đăng ký',
-                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF00B40F),
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF009C0D), // Dark solid green
                 ),
               ),
               const SizedBox(height: 4),
               Container(
-                height: 3,
-                width: 60,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF0606),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                height: 2.5,
+                width: 48,
+                color: const Color(0xFFE53935), // Red underline
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildInputField({
+  Widget _buildRoleSelection() {
+    return BlocBuilder<SignUpCubit, SignUpState>(
+      buildWhen: (prev, curr) => curr is SignUpRoleChanged,
+      builder: (context, state) {
+        final selectedRole = context.read<SignUpCubit>().selectedRole;
+        return Row(
+          children: [
+            Expanded(
+              child: _RoleCard(
+                role: 'nguoi_mua',
+                label: 'Người mua',
+                icon: Icons.shopping_bag_outlined,
+                subtitle: 'Mua sắm tại chợ',
+                isSelected: selectedRole == 'nguoi_mua',
+                onTap: () =>
+                    context.read<SignUpCubit>().setRole('nguoi_mua'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _RoleCard(
+                role: 'nguoi_ban',
+                label: 'Người bán',
+                icon: Icons.store_outlined,
+                subtitle: 'Bán hàng tại chợ',
+                isSelected: selectedRole == 'nguoi_ban',
+                onTap: () =>
+                    context.read<SignUpCubit>().setRole('nguoi_ban'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildField({
     required TextEditingController controller,
-    required String hintText,
+    required String hint,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
+    bool isRequired = true,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: const Color(0xFF0272BA).withOpacity(0.3)),
-      ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: const TextStyle(fontSize: 16),
-        decoration: InputDecoration(
-          hintText: hintText,
-          prefixIcon: Icon(icon, color: Colors.grey[600], size: 22),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
+      decoration: InputDecoration(
+        floatingLabelBehavior: FloatingLabelBehavior.never,
+        label: RichText(
+          text: TextSpan(
+            text: hint,
+            style: const TextStyle(color: Color(0xFF757575), fontSize: 15),
+            children: [
+              if (isRequired)
+                const TextSpan(text: '*', style: TextStyle(color: Colors.red)),
+            ],
+          ),
         ),
-        validator: validator,
+        prefixIcon: Icon(icon, color: const Color(0xFF757575), size: 20),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(color: Color(0xFF00B40F), width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(color: Colors.red, width: 1.2),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
       ),
+      validator: validator,
     );
   }
 
@@ -250,33 +381,62 @@ class _SignUpViewState extends State<SignUpView> {
     return BlocBuilder<SignUpCubit, SignUpState>(
       buildWhen: (prev, curr) => curr is SignUpPasswordVisibilityChanged,
       builder: (context, state) {
-        final isPasswordVisible = context.read<SignUpCubit>().isPasswordVisible;
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: const Color(0xFF0272BA).withOpacity(0.3)),
-          ),
-          child: TextFormField(
-            controller: _passwordController,
-            obscureText: !isPasswordVisible,
-            style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(
-              hintText: 'Mật khẩu*',
-              prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600], size: 22),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                  color: Colors.grey[600],
-                  size: 20,
-                ),
-                onPressed: () => context.read<SignUpCubit>().togglePasswordVisibility(),
+        final visible = context.read<SignUpCubit>().isPasswordVisible;
+        return TextFormField(
+          controller: _passwordController,
+          obscureText: !visible,
+          style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
+          decoration: InputDecoration(
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            label: RichText(
+              text: const TextSpan(
+                text: 'Mật khẩu',
+                style: TextStyle(color: Color(0xFF757575), fontSize: 15),
+                children: [
+                  TextSpan(text: '*', style: TextStyle(color: Colors.red)),
+                ],
               ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             ),
-            validator: (value) => context.read<SignUpCubit>().validatePassword(value),
+            prefixIcon: const Icon(Icons.password_rounded,
+                color: Color(0xFF757575), size: 20),
+            suffixIcon: IconButton(
+              icon: Icon(
+                visible
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+                color: const Color(0xFF9E9E9E),
+                size: 20,
+              ),
+              onPressed: () =>
+                  context.read<SignUpCubit>().togglePasswordVisibility(),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF00B40F), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Colors.red, width: 1.2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
           ),
+          validator: (v) =>
+              context.read<SignUpCubit>().validatePassword(v),
         );
       },
     );
@@ -286,133 +446,138 @@ class _SignUpViewState extends State<SignUpView> {
     return BlocBuilder<SignUpCubit, SignUpState>(
       buildWhen: (prev, curr) => curr is SignUpPasswordVisibilityChanged,
       builder: (context, state) {
-        final isPasswordVisible = context.read<SignUpCubit>().isPasswordVisible;
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: const Color(0xFF0272BA).withOpacity(0.3)),
-          ),
-          child: TextFormField(
-            controller: _confirmPasswordController,
-            obscureText: !isPasswordVisible,
-            style: const TextStyle(fontSize: 16),
-            decoration: InputDecoration(
-              hintText: 'Nhập lại mật khẩu*',
-              prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[600], size: 22),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        final visible = context.read<SignUpCubit>().isPasswordVisible;
+        return TextFormField(
+          controller: _confirmPasswordController,
+          obscureText: !visible,
+          style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
+          decoration: InputDecoration(
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            label: RichText(
+              text: const TextSpan(
+                text: 'Nhập lại mật khẩu',
+                style: TextStyle(color: Color(0xFF757575), fontSize: 15),
+                children: [
+                   TextSpan(text: '*', style: TextStyle(color: Colors.red)),
+                ],
+              ),
             ),
-            validator: (value) => context.read<SignUpCubit>().validateConfirmPassword(
-                  _passwordController.text,
-                  value,
+            prefixIcon: const Icon(Icons.password_rounded,
+                color: Color(0xFF757575), size: 20),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF4FC3F7), width: 1.2),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color(0xFF00B40F), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Colors.red, width: 1.2),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          validator: (v) => context
+              .read<SignUpCubit>()
+              .validateConfirmPassword(_passwordController.text, v),
+        );
+      },
+    );
+  }
+
+  Widget _buildSellerNotice() {
+    return BlocBuilder<SignUpCubit, SignUpState>(
+      buildWhen: (prev, curr) => curr is SignUpRoleChanged,
+      builder: (context, state) {
+        final isSeller =
+            context.read<SignUpCubit>().selectedRole == 'nguoi_ban';
+        if (!isSeller) return const SizedBox.shrink();
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3E0),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: const Color(0xFFFFB74D).withValues(alpha: 0.6)),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline_rounded,
+                  color: Color(0xFFE65100), size: 18),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Sau khi đăng ký, tài khoản sẽ được kích hoạt khi Quản lý chợ tạo gian hàng cho bạn.',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Color(0xFFBF360C),
+                    height: 1.4,
+                  ),
                 ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildRoleSelection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Chọn Vai Trò:',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF000000),
-          ),
-        ),
-        const SizedBox(height: 10),
-        BlocBuilder<SignUpCubit, SignUpState>(
-          buildWhen: (prev, curr) => curr is SignUpRoleChanged,
-          builder: (context, state) {
-            final selectedRole = context.read<SignUpCubit>().selectedRole;
-            return Row(
-              children: [
-                _buildRoleOption('nguoi_mua', 'Người Mua', selectedRole == 'nguoi_mua'),
-                const SizedBox(width: 20),
-                _buildRoleOption('nguoi_ban', 'Người Bán', selectedRole == 'nguoi_ban'),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRoleOption(String role, String label, bool isSelected) {
-    return GestureDetector(
-      onTap: () => context.read<SignUpCubit>().setRole(role),
-      child: Row(
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? const Color(0xFF00B40F) : Colors.grey,
-                width: 2,
-              ),
-              color: isSelected ? const Color(0xFF00B40F) : Colors.transparent,
-            ),
-            child: isSelected
-                ? const Icon(Icons.check, size: 14, color: Colors.white)
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 16,
-              color: isSelected ? const Color(0xFF00B40F) : Colors.black87,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSignUpButton() {
+  Widget _buildSubmitButton() {
     return BlocBuilder<SignUpCubit, SignUpState>(
       builder: (context, state) {
         final isLoading = state is SignUpLoading;
         return SizedBox(
-          height: 50,
+          height: 52,
           child: ElevatedButton(
             onPressed: isLoading
                 ? null
                 : () async {
                     if (_formKey.currentState!.validate()) {
                       await context.read<SignUpCubit>().signUp(
-                            username: _emailController.text.trim(),
+                            username: _usernameController.text.trim(),
                             password: _passwordController.text,
-                            confirmPassword: _confirmPasswordController.text,
+                            confirmPassword:
+                                _confirmPasswordController.text,
                             fullName: _nameController.text.trim(),
+                            phone: _phoneController.text.trim(),
                           );
                     }
                   },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00B40F),
+              backgroundColor: const Color(0xFF00C800), // Bright green like in mockup
+              disabledBackgroundColor: Colors.grey[300],
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(30),
               ),
-              elevation: 2,
             ),
             child: isLoading
                 ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.5, color: Colors.white),
                   )
                 : const Text(
                     'Đăng ký',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontFamily: 'Inter',
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -430,16 +595,16 @@ class _SignUpViewState extends State<SignUpView> {
         children: [
           const Text(
             'Bạn đã có tài khoản? ',
-            style: TextStyle(fontSize: 16, color: Colors.black54),
+            style: TextStyle(fontSize: 14, color: Color(0xFF1E1E1E), fontWeight: FontWeight.w500),
           ),
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: const Text(
               'Đăng nhập',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF00B40F),
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF00C800),
               ),
             ),
           ),
@@ -448,3 +613,88 @@ class _SignUpViewState extends State<SignUpView> {
     );
   }
 }
+
+// ─── Role Card Widget ──────────────────────────────────────────────────────────
+
+class _RoleCard extends StatelessWidget {
+  final String role;
+  final String label;
+  final IconData icon;
+  final String subtitle;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _RoleCard({
+    required this.role,
+    required this.label,
+    required this.icon,
+    required this.subtitle,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFE8F5E9)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFF00C800)
+                : const Color(0xFF4FC3F7),
+            width: isSelected ? 1.8 : 1.2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? const Color(0xFF2F8000)
+                    : const Color(0xFFE0E0E0),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : const Color(0xFF9E9E9E),
+                size: 20,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: isSelected
+                    ? const Color(0xFF2F8000)
+                    : const Color(0xFF757575),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10.5,
+                color: isSelected
+                    ? const Color(0xFF4CAF50)
+                    : const Color(0xFFBDBDBD),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

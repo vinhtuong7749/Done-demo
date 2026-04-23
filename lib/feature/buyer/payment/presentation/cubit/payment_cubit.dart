@@ -14,7 +14,7 @@ part 'payment_state.dart';
 class PaymentCubit extends Cubit<PaymentState> {
   final GeocodingService _geocodingService = GeocodingService();
   Timer? _debounce;
-  PaymentMethod _selectedPaymentMethod = PaymentMethod.cashOnDelivery;
+  PaymentMethod _selectedPaymentMethod = PaymentMethod.vnpay;
   OrderSummary? _orderSummary;
   String? _maDonHang; // Mã đơn hàng từ API cart hoặc tạo mới
   bool _isBuyNow = false;
@@ -394,19 +394,31 @@ class PaymentCubit extends Cubit<PaymentState> {
       if (AppConfig.enableApiLogging) {
         AppLogger.info('💳 [PAYMENT] Verify result: ${result.success}');
         AppLogger.info('💳 [PAYMENT] Message: ${result.message}');
-        AppLogger.info('💳 [PAYMENT] Order: ${result.maDonHang}');
+        AppLogger.info('💳 [PAYMENT] Order from query: ${result.maDonHang}');
         AppLogger.info('💳 [PAYMENT] Clear cart: ${result.clearCart}');
       }
 
-      if (!isClosed) {
-        if (result.success) {
-          emit(PaymentSuccess(
-            message: result.message,
-            orderId: result.maDonHang,
-          ));
-        } else {
+      // Xác định cờ status từ backend trước khi emit
+      final maTxn = result.maDonHang.isNotEmpty ? result.maDonHang : (_maDonHang ?? '');
+      if (maTxn.isNotEmpty) {
+        final status = await vnpayService.getOrderStatus(maTxn);
+        
+        if (!isClosed) {
+          if (status.isPaid) {
+            emit(PaymentSuccess(
+              orderId: status.maDonHang.isNotEmpty ? status.maDonHang : maTxn,
+              message: status.message?.isNotEmpty == true ? status.message! : 'Thanh toán thành công!',
+            ));
+          } else {
+            emit(PaymentFailure(
+              errorMessage: status.message?.isNotEmpty == true ? status.message! : 'Thanh toán chưa hoàn tất',
+            ));
+          }
+        }
+      } else {
+        if (!isClosed) {
           emit(PaymentFailure(
-            errorMessage: result.message,
+            errorMessage: result.message.isNotEmpty ? result.message : 'Dữ liệu trả về thiếu mã đơn hàng',
           ));
         }
       }
@@ -855,26 +867,21 @@ class PaymentCubit extends Cubit<PaymentState> {
     }
   }
 
-  /// Loại bỏ đuôi ', Việt Nam' / ', Vietnam' khỏi địa chỉ
-  /// Backend chỉ ghi nhận thay đổi địa chỉ nếu không có đuôi này
   String _cleanAddressForBackend(String address) {
     var cleaned = address.trim();
     
-    // Loại bỏ các biến thể đuôi Việt Nam
-    final suffixes = [
-      ', Việt Nam',
-      ', Vietnam',
-      ', Viet Nam',
-      ',Việt Nam',
-      ',Vietnam',
-      ',Viet Nam',
-    ];
+    // Loại bỏ hoàn toàn chữ Việt Nam ở mọi vị trí bằng Regex
+    cleaned = cleaned.replaceAll(RegExp(r',\s*Việt Nam', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r',\s*Viet Nam', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r',\s*Vietnam', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'Việt Nam', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'Viet Nam', caseSensitive: false), '');
+    cleaned = cleaned.replaceAll(RegExp(r'Vietnam', caseSensitive: false), '');
     
-    for (final suffix in suffixes) {
-      if (cleaned.toLowerCase().endsWith(suffix.toLowerCase())) {
-        cleaned = cleaned.substring(0, cleaned.length - suffix.length).trim();
-        break;
-      }
+    // Dọn dẹp khoảng trắng và dấu phẩy thừa
+    cleaned = cleaned.trim();
+    if (cleaned.endsWith(',')) {
+      cleaned = cleaned.substring(0, cleaned.length - 1).trim();
     }
     
     if (AppConfig.enableApiLogging) {

@@ -131,6 +131,7 @@ class UserProfileData {
   final String? nganHang;
   final double? canNang;
   final double? chieuCao;
+  final String? walletId;
 
   UserProfileData({
     required this.maNguoiDung,
@@ -144,6 +145,7 @@ class UserProfileData {
     this.nganHang,
     this.canNang,
     this.chieuCao,
+    this.walletId,
   });
 
   factory UserProfileData.fromJson(Map<String, dynamic> json) {
@@ -159,6 +161,7 @@ class UserProfileData {
       nganHang: json['ngan_hang'] ?? json['bank_name'],
       canNang: _parseDouble(json['can_nang'] ?? json['weight']),
       chieuCao: _parseDouble(json['chieu_cao'] ?? json['height']),
+      walletId: json['wallet_id'] as String?,
     );
   }
 

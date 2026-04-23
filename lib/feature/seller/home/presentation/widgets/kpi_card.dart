@@ -36,15 +36,16 @@ class KPIOverviewCard extends StatelessWidget {
                   Text(
                     'Tổng doanh thu (VND)',
                     style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     cubit.formatCurrency(state.dailyOverview.revenue),
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: state.isStoreOpen ? const Color(0xFF1B5E20) : Colors.red[900],
                     ),
@@ -65,19 +66,19 @@ class KPIOverviewCard extends StatelessWidget {
                   children: [
                     Icon(
                       state.revenueChangePercentage >= 0 ? Icons.arrow_upward : Icons.arrow_downward, 
-                      size: 14, 
+                      size: 18, 
                       color: !state.isStoreOpen 
-                          ? Colors.red[300]
+                          ? Colors.red[400]
                           : state.revenueChangePercentage >= 0 ? const Color(0xFF26CD3A) : Colors.red,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${state.revenueChangePercentage >= 0 ? '+' : ''}${state.revenueChangePercentage.toStringAsFixed(1)}%',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: !state.isStoreOpen 
-                            ? Colors.red[300]
+                            ? Colors.red[400]
                             : state.revenueChangePercentage >= 0 ? const Color(0xFF26CD3A) : Colors.red,
                       ),
                     ),
@@ -123,8 +124,8 @@ class KPIOverviewCard extends StatelessWidget {
               Text(
                 day,
                 style: TextStyle(
-                  fontSize: 12,
-                  color: state.isStoreOpen ? Colors.grey[600] : Colors.red[300],
+                  fontSize: 14,
+                  color: state.isStoreOpen ? Colors.grey[800] : Colors.red[400],
                   fontWeight: state.isStoreOpen && day == _getCurrentDayLabel() ? FontWeight.bold : FontWeight.normal,
                 ),
               ),

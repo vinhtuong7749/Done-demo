@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'order_state.dart';
@@ -36,7 +37,84 @@ class RejectOrderResult {
 class SellerOrderCubit extends Cubit<SellerOrderState> {
   final SellerOrderService _orderService = SellerOrderService();
 
+  // --- Polling để nhận đơn hàng mới ---
+  Timer? _pollingTimer;
+  static const Duration _pollingInterval = Duration(seconds: 30);
+
   SellerOrderCubit() : super(SellerOrderState.initial());
+
+  /// Bắt đầu polling tự động khi màn hình order được mở
+  void startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) async {
+      debugPrint('🔄 [SELLER POLLING] Checking for new orders...');
+      await _checkForNewOrders();
+    });
+    debugPrint('✅ [SELLER POLLING] Started (interval: ${_pollingInterval.inSeconds}s)');
+  }
+
+  /// Dừng polling khi màn hình bị đóng
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    debugPrint('🛑 [SELLER POLLING] Stopped');
+  }
+
+  /// Kiểm tra đơn hàng mới mà không hiển thị loading
+  Future<void> _checkForNewOrders() async {
+    if (isClosed) return;
+    try {
+      final response = await _orderService.getOrders(limit: 50);
+      if (!response.success || isClosed) return;
+
+      final rawOrders = response.items.map((item) => SellerOrder.fromApiModel(item)).toList();
+      final orders = rawOrders.where((order) {
+        final pm = order.paymentMethod.toLowerCase().trim();
+        final isOnlinePayment = pm == 'chuyen_khoan' || pm == 'vnpay' || pm == 'online';
+        if (isOnlinePayment && !order.isPaid) return false;
+        return true;
+      }).toList();
+
+      final currentPendingIds = state.orders
+          .where((o) => o.status == OrderStatus.pending)
+          .map((o) => o.id)
+          .toSet();
+      final newPendingOrders = orders
+          .where((o) =>
+              o.status == OrderStatus.pending &&
+              !currentPendingIds.contains(o.id))
+          .toList();
+
+      if (newPendingOrders.isNotEmpty) {
+        debugPrint('🆕 [SELLER POLLING] ${newPendingOrders.length} new order(s) detected!');
+        final today = DateTime.now();
+        final todayOrders = orders.where((item) {
+          final rawItem = response.items.firstWhere((r) => r.maDonHang == item.id, orElse: () => response.items.first);
+          final time = rawItem.thoiGianGiaoHang;
+          if (time == null) return false;
+          return time.year == today.year &&
+              time.month == today.month &&
+              time.day == today.day;
+        });
+        final totalToday =
+            todayOrders.fold<double>(0, (sum, item) => sum + item.amount);
+
+        emit(state.copyWith(
+          orders: orders,
+          totalToday: totalToday,
+          newOrderCount: newPendingOrders.length,
+          hasNewOrder: true,
+        ));
+      }
+    } catch (e) {
+      debugPrint('⚠️ [SELLER POLLING] Check error: $e');
+    }
+  }
+
+  /// Reset trạng thái đơn hàng mới (sau khi đã thông báo)
+  void clearNewOrderNotification() {
+    emit(state.copyWith(hasNewOrder: false, newOrderCount: 0));
+  }
 
   Future<void> loadOrders() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
@@ -45,25 +123,40 @@ class SellerOrderCubit extends Cubit<SellerOrderState> {
       final response = await _orderService.getOrders(limit: 50);
       
       if (response.success) {
-        final orders = response.items.map((item) => SellerOrder.fromApiModel(item)).toList();
+        final rawOrders = response.items.map((item) => SellerOrder.fromApiModel(item)).toList();
+        
+        // Giữ lại TấT CẢ đơn hàng (kể cả khi API không trả về thông tin thanh toán).
+        // Chỉ ẩn đơn "thanh toán online (chuyen_khoan/vnpay) + CHƯА thanh toán".
+        // Nếu paymentMethod rỗng (API không trả) -> cũng hiển thị.
+        final orders = rawOrders.where((order) {
+          final pm = order.paymentMethod.toLowerCase().trim();
+          // Ẩn đơn hàng thanh toán online chưa thành công
+          final isOnlinePayment = pm == 'chuyen_khoan' || pm == 'vnpay' || pm == 'online';
+          if (isOnlinePayment && !order.isPaid) return false;
+          return true;
+        }).toList();
         
         // Tính tổng tiền hôm nay (đơn hàng trong ngày)
         final today = DateTime.now();
-        final todayOrders = response.items.where((item) {
-          if (item.thoiGianGiaoHang == null) return false;
-          return item.thoiGianGiaoHang!.year == today.year &&
-                 item.thoiGianGiaoHang!.month == today.month &&
-                 item.thoiGianGiaoHang!.day == today.day;
+        final todayOrders = orders.where((item) {
+          final rawItem = response.items.firstWhere((r) => r.maDonHang == item.id, orElse: () => response.items.first);
+          final time = rawItem.thoiGianGiaoHang;
+          if (time == null) return false;
+          return time.year == today.year &&
+                 time.month == today.month &&
+                 time.day == today.day;
         });
-        final totalToday = todayOrders.fold<double>(0, (sum, item) => sum + item.tongTien);
+        final totalToday = todayOrders.fold<double>(0, (sum, item) => sum + item.amount);
 
         emit(state.copyWith(
           isLoading: false,
           orders: orders,
           totalToday: totalToday,
+          hasNewOrder: false,
+          newOrderCount: 0,
         ));
         
-        debugPrint('✅ [SELLER ORDER] Loaded ${orders.length} orders');
+        debugPrint('✅ [SELLER ORDER] Loaded ${orders.length} orders (from ${rawOrders.length} raw)');
       } else {
         emit(state.copyWith(
           isLoading: false,
@@ -84,9 +177,9 @@ class SellerOrderCubit extends Cubit<SellerOrderState> {
   }
 
   /// Xác nhận đơn hàng và trả về response
-  Future<ConfirmOrderResult?> confirmOrder(String orderId) async {
+  Future<ConfirmOrderResult?> confirmOrder(String orderId, {List<String> ingredientIds = const []}) async {
     try {
-      final response = await _orderService.confirmOrder(orderId);
+      final response = await _orderService.confirmOrder(orderId, ingredientIds: ingredientIds);
       
       if (response.success) {
         await loadOrders();
@@ -140,5 +233,11 @@ class SellerOrderCubit extends Cubit<SellerOrderState> {
 
   void setSelectedNavIndex(int index) {
     emit(state.copyWith(selectedNavIndex: index));
+  }
+
+  @override
+  Future<void> close() {
+    stopPolling();
+    return super.close();
   }
 }

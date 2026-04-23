@@ -6,6 +6,7 @@ import '../../../../core/dependency/injection.dart';
 import '../../../../core/services/auth/auth_service.dart';
 import '../../../../core/config/route_name.dart';
 import '../../../../core/widgets/buyer_loading.dart';
+import '../../../wallet/presentation/screens/wallet_screen.dart';
 
 class UserScreen extends StatelessWidget {
   const UserScreen({super.key});
@@ -125,6 +126,32 @@ class _UserView extends StatelessWidget {
             label: 'Giỏ hàng của tôi',
             onTap: () {
               Navigator.pushNamed(context, RouteName.cart);
+            },
+          ),
+          const SizedBox(height: 12),
+          // Ví điện tử
+          _buildMenuItem(
+            context,
+            icon: Icons.account_balance_wallet_outlined,
+            iconColor: const Color(0xFFE91E63),
+            label: 'Ví điện tử',
+            onTap: () {
+              final user = context.read<UserCubit>().state.user;
+              if (user != null && user.walletId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WalletScreen(
+                      walletId: user.walletId!,
+                      userRole: 'nguoi_mua',
+                    ),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Chưa có thông tin ví')),
+                );
+              }
             },
           ),
           const SizedBox(height: 12),

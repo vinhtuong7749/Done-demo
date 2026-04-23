@@ -7,6 +7,9 @@ class UserModel {
   final String? gioiTinh;
   final String? sdt;
   final String? diaChi;
+  final String? walletId;
+  final int approvalStatus;
+  final String? stallId;
 
   UserModel({
     required this.maNguoiDung,
@@ -16,6 +19,9 @@ class UserModel {
     this.gioiTinh,
     this.sdt,
     this.diaChi,
+    this.walletId,
+    this.approvalStatus = 0,
+    this.stallId,
   });
 
   /// Tạo UserModel từ JSON
@@ -28,6 +34,9 @@ class UserModel {
       gioiTinh: (json['gioi_tinh'] ?? json['gender']) as String?,
       sdt: (json['sdt'] ?? json['phone']) as String?,
       diaChi: (json['dia_chi'] ?? json['address']) as String?,
+      walletId: json['wallet_id'] as String?,
+      approvalStatus: (json['approval_status'] ?? json['trang_thai_duyet']) as int? ?? 0,
+      stallId: (json['stall_id'] ?? json['ma_gian_hang']) as String?,
     );
   }
 
@@ -41,6 +50,9 @@ class UserModel {
       if (gioiTinh != null) 'gioi_tinh': gioiTinh,
       if (sdt != null) 'sdt': sdt,
       if (diaChi != null) 'dia_chi': diaChi,
+      if (walletId != null) 'wallet_id': walletId,
+      'approval_status': approvalStatus,
+      if (stallId != null) 'stall_id': stallId,
     };
   }
 
@@ -53,6 +65,9 @@ class UserModel {
     String? gioiTinh,
     String? sdt,
     String? diaChi,
+    String? walletId,
+    int? approvalStatus,
+    String? stallId,
   }) {
     return UserModel(
       maNguoiDung: maNguoiDung ?? this.maNguoiDung,
@@ -62,6 +77,9 @@ class UserModel {
       gioiTinh: gioiTinh ?? this.gioiTinh,
       sdt: sdt ?? this.sdt,
       diaChi: diaChi ?? this.diaChi,
+      walletId: walletId ?? this.walletId,
+      approvalStatus: approvalStatus ?? this.approvalStatus,
+      stallId: stallId ?? this.stallId,
     );
   }
 

@@ -558,18 +558,40 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
                                           itemBuilder: (context, index) {
                                             final suggestion = state.addressSuggestions[index];
                                             return ListTile(
-                                              leading: const Icon(Icons.location_on_outlined, color: Color(0xFF00B40F), size: 20),
+                                              leading: const Padding(
+                                                padding: EdgeInsets.only(top: 4.0),
+                                                child: Icon(Icons.location_on_outlined, color: Color(0xFF00B40F), size: 22),
+                                              ),
                                               title: Text(
-                                                suggestion.displayName,
-                                                maxLines: 2,
+                                                suggestion.mainText,
+                                                maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
                                                   fontFamily: 'Roboto',
-                                                  fontSize: 14,
-                                                  color: Color(0xFF333333),
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: Color(0xFF202020),
                                                 ),
                                               ),
-                                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                              subtitle: suggestion.secondaryText.isNotEmpty ? Padding(
+                                                padding: const EdgeInsets.only(top: 4.0),
+                                                child: Text(
+                                                  suggestion.secondaryText,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontFamily: 'Roboto',
+                                                    fontSize: 13,
+                                                    color: Color(0xFF757575),
+                                                  ),
+                                                ),
+                                              ) : null,
+                                              trailing: const Icon(
+                                                Icons.call_made,
+                                                color: Color(0xFF9E9E9E),
+                                                size: 20,
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                               onTap: () {
                                                 _addressController.text = suggestion.displayName;
                                                 paymentCubit.selectAddressSuggestion(suggestion);
@@ -874,10 +896,9 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
     );
   }
 
-  /// Delivery time with slot selection
-  Widget _buildDeliveryTime(BuildContext context, OrderSummary orderSummary, String selectedSlotId) {
-    // Current valid slots from API
-    final slots = [
+  /// Helper to get valid slots
+  List<Map<String, String>> _getAvailableSlots() {
+    final allSlots = [
       {'id': 'KG01', 'name': 'Sáng', 'time': '06:30 - 07:00'},
       {'id': 'KG02', 'name': 'Sáng', 'time': '07:00 - 07:30'},
       {'id': 'KG03', 'name': 'Sáng', 'time': '07:30 - 08:00'},
@@ -901,6 +922,37 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
       {'id': 'KG21', 'name': 'Tối', 'time': '18:30 - 19:00'},
     ];
 
+    final now = DateTime.now();
+
+    // Rule 1: Giới hạn thời gian kết thúc nhận đơn trong ngày (sau 19h là chốt ca)
+    // TẠM ẨN: if (now.hour >= 19) {
+    //   return [];
+    // }
+
+    // Rule 2: LOGIC ĐẶT HÀNG GIAO SAU (1 TIẾNG):
+    // Thời gian chuẩn bị món/hàng hóa yêu cầu trễ 1 tiếng.
+    // Ví dụ: Đặt lúc 8h sáng, thời gian giao sớm nhất có thể chọn là từ 9h trở đi.
+    // TẠM ẨN ĐỂ TEST: final minTime = now.add(const Duration(hours: 1));
+
+    return allSlots; // Trả về tất cả các khung giờ cho việc test
+
+    // TẠM ẨN: return allSlots.where((slot) {
+    //   final timeStr = slot['time']!.split(' - ')[0]; // get start time
+    //   final parts = timeStr.split(':');
+    //   if (parts.length == 2) {
+    //     final hour = int.tryParse(parts[0]) ?? 0;
+    //     final minute = int.tryParse(parts[1]) ?? 0;
+    //     final slotTime = DateTime(now.year, now.month, now.day, hour, minute);
+    //     return slotTime.isAfter(minTime);
+    //   }
+    //   return true;
+    // }).toList();
+  }
+
+  /// Delivery time with slot selection
+  Widget _buildDeliveryTime(BuildContext context, OrderSummary orderSummary, String selectedSlotId) {
+    List<Map<String, String>> slots = _getAvailableSlots();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -914,24 +966,51 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
           ),
         ),
         const SizedBox(height: 12),
-        Container(
-          height: 140,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: slots.length,
-            itemBuilder: (context, index) {
-              final slot = slots[index];
-              final isSelected = selectedSlotId == slot['id'];
-              return _buildTimeSlotOption(
-                context, 
-                slot['id']!, 
-                slot['name']!, 
-                slot['time']!, 
-                isSelected
-              );
-            },
+        if (slots.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFEBEE),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFFFCDD2)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Color(0xFFD32F2F), size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Đã hết khung giờ giao hàng trong ngày. Vui lòng quay lại đặt hàng vào ngày mai!',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 14,
+                      color: Color(0xFFD32F2F),
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Container(
+            height: 140,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: slots.length,
+              itemBuilder: (context, index) {
+                final slot = slots[index];
+                final isSelected = selectedSlotId == slot['id'];
+                return _buildTimeSlotOption(
+                  context, 
+                  slot['id']!, 
+                  slot['name']!, 
+                  slot['time']!, 
+                  isSelected
+                );
+              },
+            ),
           ),
-        ),
       ],
     );
   }
@@ -1006,33 +1085,50 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
   /// Order summary section
   Widget _buildOrderSummary(OrderSummary orderSummary) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.black.withValues(alpha: 0.1),
+          color: Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Tóm tắt đơn hàng',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-              height: 1.1,
-              color: Color(0xFF202020),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: Color(0xFF00B40F),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Tóm tắt đơn hàng',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  height: 1.2,
+                  color: Color(0xFF202020),
+                ),
+              ),
+            ],
           ),
           
           const SizedBox(height: 16),
@@ -1040,7 +1136,7 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
           // Divider
           Container(
             height: 1,
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.05),
           ),
           
           const SizedBox(height: 16),
@@ -1053,12 +1149,12 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
           // Shipping
           // _buildSummaryRow('Vận chuyển', orderSummary.shippingFee, false),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           
           // Divider
           Container(
             height: 1,
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.05),
           ),
           
           const SizedBox(height: 16),
@@ -1104,63 +1200,62 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
     final cubit = context.read<PaymentCubit>();
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.black.withValues(alpha: 0.1),
+          color: Colors.black.withValues(alpha: 0.05),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Phương thức thanh toán',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontWeight: FontWeight.w700,
-              fontSize: 20,
-              height: 1.1,
-              color: Color(0xFF202020),
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: Color(0xFF00B40F),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Phương thức thanh toán',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  height: 1.2,
+                  color: Color(0xFF202020),
+                ),
+              ),
+            ],
           ),
           
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           
-          // Divider
-          Container(
-            height: 1,
-            color: Colors.black.withValues(alpha: 0.1),
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Cash on delivery
-          _buildPaymentMethodOption(
-            context,
-            PaymentMethod.cashOnDelivery,
-            'Thanh toán khi giao',
-            'assets/img/payment_cash_icon.png',
-            state.selectedPaymentMethod == PaymentMethod.cashOnDelivery,
-            () => cubit.selectPaymentMethod(PaymentMethod.cashOnDelivery),
-          ),
-          
-          // VNPay
+          // VNPay Only
           _buildPaymentMethodOption(
             context,
             PaymentMethod.vnpay,
-            'VNpay',
+            'Thanh toán qua VNPay',
             'assets/img/payment_vnpay_logo-3a23a6.png',
-            state.selectedPaymentMethod == PaymentMethod.vnpay,
-            () => cubit.selectPaymentMethod(PaymentMethod.vnpay),
+            true, // Always selected
+            () {}, // No-op since it's the only option
             isLogo: true,
           ),
         ],
@@ -1334,30 +1429,42 @@ class _PaymentViewState extends State<PaymentView> with WidgetsBindingObserver {
 
   /// Order button
   Widget _buildOrderButton(BuildContext context, PaymentLoaded state) {
+    final isNoSlots = _getAvailableSlots().isEmpty;
+
     return BlocBuilder<PaymentCubit, PaymentState>(
       builder: (context, currentState) {
         final isProcessing = currentState is PaymentProcessing;
         
         return GestureDetector(
-          onTap: isProcessing
+          onTap: (isProcessing || isNoSlots)
               ? null
-              : () => context.read<PaymentCubit>().processPayment(),
+              : () {
+                  // Mặc định chọn khung đầu tiên nếu KG10 mặc định không còn trong list (chống lỗi logic nếu cần)
+                  final slots = _getAvailableSlots();
+                  if (slots.isNotEmpty) {
+                      final isValid = slots.any((s) => s['id'] == state.timeSlotId);
+                      if (!isValid) {
+                         context.read<PaymentCubit>().updateTimeSlotId(slots.first['id']!);
+                      }
+                  }
+                  context.read<PaymentCubit>().processPayment();
+                },
           child: Container(
             height: 59,
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isProcessing
+                colors: (isProcessing || isNoSlots)
                     ? [
-                        const Color(0xFF00B40F),
-                        const Color(0xFF00B40F),
+                        const Color(0xFFCCCCCC),
+                        const Color(0xFFB3B3B3),
                       ]
                     : [
-                        Color(0xFF00B40F),
-                        Color(0xFF00B40F),
+                        const Color(0xFF00B40F),
+                        const Color(0xFF00B40F),
                       ],
               ),
               borderRadius: BorderRadius.circular(18),
-              boxShadow: isProcessing
+              boxShadow: (isProcessing || isNoSlots)
                   ? []
                   : [
                       BoxShadow(

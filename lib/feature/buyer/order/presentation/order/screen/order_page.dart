@@ -39,7 +39,7 @@ class _OrderViewState extends State<OrderView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: const Color(0xFFF5F9F6), // Stitch Mint
       body: SafeArea(
         child: Column(
           children: [
@@ -128,12 +128,12 @@ class _OrderViewState extends State<OrderView> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+              color: const Color(0xFF26CD3A).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.receipt_long,
-              color: Color(0xFF00B40F),
+              color: Color(0xFF26CD3A),
               size: 24,
             ),
           ),
@@ -144,7 +144,7 @@ class _OrderViewState extends State<OrderView> {
               fontFamily: 'Roboto',
               fontWeight: FontWeight.w700,
               fontSize: 22,
-              color: Color(0xFF000000),
+              color: Color(0xFF1B5E20), // Forest Green
             ),
           ),
         ],
@@ -176,12 +176,12 @@ class _OrderViewState extends State<OrderView> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                    color: const Color(0xFF26CD3A).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.history,
-                    color: Color(0xFF00B40F),
+                    color: Color(0xFF26CD3A),
                     size: 18,
                   ),
                 ),
@@ -192,7 +192,7 @@ class _OrderViewState extends State<OrderView> {
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
-                    color: Color(0xFF202020),
+                    color: Color(0xFF1B5E20), // Forest Green
                   ),
                 ),
               ],
@@ -307,33 +307,23 @@ class _OrderViewState extends State<OrderView> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isSelected
-                  ? [
-                      const Color(0xFF00B40F).withValues(alpha: 0.15),
-                      const Color(0xFF00B40F).withValues(alpha: 0.08),
-                    ]
-                  : [
-                      AppColors.getCardBackground(),
-                      AppColors.getCardBackground(alpha: 0.3),
-                    ],
-            ),
+            color: isSelected ? const Color(0xFF26CD3A).withValues(alpha: 0.08) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF00B40F)
-                  : Colors.black.withValues(alpha: 0.1),
-              width: isSelected ? 2 : 1,
+                  ? const Color(0xFF26CD3A)
+                  : Colors.transparent,
+              width: isSelected ? 1.5 : 1,
             ),
             boxShadow: isSelected
-                ? [
+                ? []
+                : [
                     BoxShadow(
-                      color: const Color(0xFF00B40F).withValues(alpha: 0.2),
-                      blurRadius: 8,
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
-                  ]
-                : [],
+                  ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -344,8 +334,8 @@ class _OrderViewState extends State<OrderView> {
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w700,
-                  fontSize: 28,
-                  color: isSelected ? const Color(0xFF00B40F) : const Color(0xFF292D32),
+                  fontSize: 26,
+                  color: isSelected ? const Color(0xFF26CD3A) : const Color(0xFF1C1C1E),
                 ),
               ),
               
@@ -362,7 +352,7 @@ class _OrderViewState extends State<OrderView> {
                       fontWeight: FontWeight.w600,
                       fontSize: 11,
                       letterSpacing: -0.16,
-                      color: isSelected ? const Color(0xFF00B40F) : const Color(0xFF2CCE75),
+                      color: isSelected ? const Color(0xFF1B5E20) : const Color(0xFF8E8E93),
                     ),
                     textAlign: TextAlign.center,
                     maxLines: 2,
@@ -392,13 +382,13 @@ class _OrderViewState extends State<OrderView> {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.getCardBackground(),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -415,13 +405,13 @@ class _OrderViewState extends State<OrderView> {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                        color: const Color(0xFF26CD3A).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
                         Icons.receipt_long,
                         size: 16,
-                        color: Color(0xFF00B40F),
+                        color: Color(0xFF26CD3A),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -431,7 +421,7 @@ class _OrderViewState extends State<OrderView> {
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: Color(0xFF202020),
+                        color: Color(0xFF1B5E20),
                       ),
                     ),
                   ],
@@ -490,7 +480,7 @@ class _OrderViewState extends State<OrderView> {
             
             const SizedBox(height: 12),
             
-            // Payment status row
+                // Payment status row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -499,7 +489,7 @@ class _OrderViewState extends State<OrderView> {
                     Icon(
                       order.isPaid ? Icons.check_circle : Icons.pending,
                       size: 16,
-                      color: order.isPaid ? const Color(0xFF00B40F) : Colors.orange,
+                      color: order.isPaid ? const Color(0xFF26CD3A) : Colors.orange,
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -508,7 +498,7 @@ class _OrderViewState extends State<OrderView> {
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w500,
                         fontSize: 13,
-                        color: order.isPaid ? const Color(0xFF00B40F) : Colors.orange,
+                        color: order.isPaid ? const Color(0xFF26CD3A) : Colors.orange,
                       ),
                     ),
                   ],
@@ -519,9 +509,9 @@ class _OrderViewState extends State<OrderView> {
                   '${_formatPrice(order.totalAmount)}đ',
                   style: const TextStyle(
                     fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                     fontSize: 18,
-                    color: Color(0xFF00B40F),
+                    color: Color(0xFFE53935), // Red pricing for orders
                   ),
                 ),
               ],
@@ -540,9 +530,9 @@ class _OrderViewState extends State<OrderView> {
       case OrderStatusType.processing:
         return Colors.blue;
       case OrderStatusType.shipping:
-        return const Color(0xFF00B40F);
+        return const Color(0xFF1B5E20); // Darker forest green
       case OrderStatusType.delivered:
-        return const Color(0xFF00B40F);
+        return const Color(0xFF26CD3A); // Bright primary green
       case OrderStatusType.cancelled:
         return Colors.red;
     }

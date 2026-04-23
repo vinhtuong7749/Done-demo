@@ -7,7 +7,7 @@ import '../../../../../../core/config/route_name.dart';
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../core/services/order_service.dart';
 import '../../../../../../core/services/review_api_service.dart';
-
+import '../widgets/refund_dialog.dart';
 
 
 /// Màn hình chi tiết đơn hàng
@@ -260,6 +260,30 @@ class _OrderDetailViewState extends State<OrderDetailView> {
     }
   }
   
+  /// Hiển thị dialog hoàn tiền
+  void _showRefundDialog(OrderDetailData orderDetail) {
+    // Chỉ chọn các sản phẩm chưa từng yêu cầu hoàn tiền
+    final eligibleItems = orderDetail.items.where((item) => !['cho_duyet', 'da_duyet', 'hoan_hang', 'tu_choi'].contains(item.detailStatus)).toList();
+    if (eligibleItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không có sản phẩm nào có thể hoàn tiền trong đơn hàng này')),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => RefundDialog(
+        orderId: orderDetail.maDonHang,
+        eligibleItems: eligibleItems,
+        onConfirm: (refundItems) {
+          // Sử dụng context của OrderDetailView thay vì dialogContext
+          context.read<OrderDetailCubit>().requestRefund(orderDetail.maDonHang, refundItems);
+        },
+      ),
+    );
+  }
+
   /// Hiển thị dialog cảm ơn
   void _showThankYouDialog(String tenNguyenLieu, double? danhGiaTb) {
     showDialog(
@@ -361,6 +385,13 @@ class _OrderDetailViewState extends State<OrderDetailView> {
             ),
           );
           // Navigate to new order or cart
+        } else if (state is OrderDetailRefundSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.green,
+            ),
+          );
         } else if (state is OrderDetailFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -502,10 +533,22 @@ class _OrderDetailViewState extends State<OrderDetailView> {
   /// Content
   Widget _buildContent(BuildContext context, OrderDetailLoaded state) {
     final orderDetail = state.orderDetail;
+    debugPrint('REFUND DEBUG: tinhTrangDonHang = ${orderDetail.tinhTrangDonHang}');
+    for (var item in orderDetail.items) {
+      debugPrint('REFUND DEBUG: item detailStatus = ${item.detailStatus}');
+    }
+    final conditionMet = (orderDetail.tinhTrangDonHang == 'da_giao' || orderDetail.tinhTrangDonHang == 'hoan_thanh') &&
+              orderDetail.items.any((item) => !['cho_duyet', 'da_duyet', 'hoan_hang', 'tu_choi'].contains(item.detailStatus));
+    debugPrint('REFUND DEBUG: conditionMet = $conditionMet');
     
     return SingleChildScrollView(
       child: Column(
         children: [
+          const SizedBox(height: 16),
+          
+          // Timeline tracking section
+          _buildOrderTimelineSection(orderDetail.tinhTrangDonHang),
+          
           const SizedBox(height: 16),
           
           // Delivery info section
@@ -531,10 +574,141 @@ class _OrderDetailViewState extends State<OrderDetailView> {
           
           // Cancel order button - ẩn với đơn đã giao và đã huỷ
           if (orderDetail.tinhTrangDonHang != 'da_giao' &&
+              orderDetail.tinhTrangDonHang != 'hoan_thanh' &&
               orderDetail.tinhTrangDonHang != 'da_huy')
             _buildCancelOrderButton(context, orderDetail.maDonHang),
           
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  /// Order Timeline Section
+  Widget _buildOrderTimelineSection(String currentStatus) {
+    if (currentStatus == 'da_huy') return const SizedBox.shrink();
+
+    int currentStep = 0;
+    if (currentStatus == 'cho_giao_hang' || currentStatus == 'cho_shipper') {
+      currentStep = 1;
+    } else if (currentStatus == 'dang_lay_hang') {
+      currentStep = 2;
+    } else if (currentStatus == 'dang_giao') {
+      currentStep = 3;
+    } else if (currentStatus == 'da_giao' || currentStatus == 'hoan_thanh' || currentStatus == 'da_nhan_hang') {
+      currentStep = 4;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+      decoration: BoxDecoration(
+        color: AppColors.getCardBackground(),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              'Tiến trình giao hàng',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Stack(
+            children: [
+              // Nền đường nối (Lines)
+              Positioned(
+                top: 11,
+                left: 35,
+                right: 35,
+                child: Row(
+                  children: [
+                    Expanded(child: _buildTimelineLine(1 <= currentStep)),
+                    Expanded(child: _buildTimelineLine(2 <= currentStep)),
+                    Expanded(child: _buildTimelineLine(3 <= currentStep)),
+                    Expanded(child: _buildTimelineLine(4 <= currentStep)),
+                  ],
+                ),
+              ),
+              // Các điểm trạng thái (Dots + Text)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildTimelineStep('Đã đặt', 0 <= currentStep, 0 < currentStep),
+                  _buildTimelineStep('Chờ lấy', 1 <= currentStep, 1 < currentStep),
+                  _buildTimelineStep('Đang lấy', 2 <= currentStep, 2 < currentStep),
+                  _buildTimelineStep('Đang giao', 3 <= currentStep, 3 < currentStep),
+                  _buildTimelineStep('Đã giao', 4 <= currentStep, false),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimelineLine(bool isPassed) {
+    return Container(
+      height: 2,
+      color: isPassed ? const Color(0xFF00B40F) : const Color(0xFFE0E0E0),
+    );
+  }
+
+  Widget _buildTimelineStep(String title, bool isReached, bool isPassed) {
+    final color = isReached ? const Color(0xFF00B40F) : const Color(0xFFE0E0E0);
+    return SizedBox(
+      width: 60,
+      child: Column(
+        children: [
+          Container(
+            width: 24,
+            height: 24,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isPassed ? color : Colors.white,
+              border: Border.all(color: color, width: isReached ? 2 : 1.5),
+            ),
+            child: isPassed
+                ? const Icon(Icons.check, size: 14, color: Colors.white)
+                : (isReached
+                    ? Center(
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: color,
+                          ),
+                        ),
+                      )
+                    : null),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 11,
+              fontWeight: isReached ? FontWeight.bold : FontWeight.normal,
+              color: isReached ? const Color(0xFF00B40F) : const Color(0xFF8E8E93),
+            ),
+          ),
         ],
       ),
     );
@@ -631,6 +805,94 @@ class _OrderDetailViewState extends State<OrderDetailView> {
           if (orderDetail.thoiGianGiaoHang != null) ...[
             const SizedBox(height: 8),
             _buildInfoRow('Thời gian', _formatDateTime(orderDetail.thoiGianGiaoHang!)),
+          ],
+          
+          if (orderDetail.tinhTrangDonHang == 'cho_shipper' || orderDetail.tinhTrangDonHang == 'dang_lay_hang') ...[
+            Builder(
+              builder: (context) {
+                final physicalItems = orderDetail.items.where((i) => i.maNguyenLieu != 'NLQD01').toList();
+                final totalPhysical = physicalItems.length;
+                if (totalPhysical > 0) {
+                  final pickedPhysical = physicalItems.where((i) => i.detailStatus == 'da_lay_hang').length;
+                  final double progress = pickedPhysical / totalPhysical;
+                  
+                  return Container(
+                    margin: const EdgeInsets.only(top: 16),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.shopping_bag_outlined, color: Colors.orange.shade800, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Shipper đang đi chợ (Đã lấy $pickedPhysical/$totalPhysical món)',
+                                style: TextStyle(
+                                  color: Colors.orange.shade800,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: Colors.orange.shade200,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade800),
+                            minHeight: 6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+          
+          if (orderDetail.tinhTrangDonHang == 'dang_giao') ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context, 
+                    RouteName.orderTracking, 
+                    arguments: orderDetail.maDonHang,
+                  );
+                },
+                icon: const Icon(Icons.location_on, color: Colors.white),
+                label: const Text(
+                  'Xem Bản Đồ Theo Dõi Shipper',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B40F),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -893,6 +1155,34 @@ class _OrderDetailViewState extends State<OrderDetailView> {
           
           // Total
           _buildSummaryRow('Tổng cộng', orderDetail.tongTien, isBold: true),
+
+          // Nút hoàn tiền
+          if ((orderDetail.tinhTrangDonHang == 'da_giao' || orderDetail.tinhTrangDonHang == 'hoan_thanh') &&
+              orderDetail.items.any((item) => !['cho_duyet', 'da_duyet', 'hoan_hang', 'tu_choi'].contains(item.detailStatus))) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => _showRefundDialog(orderDetail),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Yêu Cầu Hoàn Tiền',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -996,6 +1286,26 @@ class _OrderDetailViewState extends State<OrderDetailView> {
                         ],
                       ),
                     ],
+                    if (item.detailStatus == 'hoan_hang') ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          'Đã hoàn tiền: ${item.cancelReason ?? ""}',
+                          style: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1026,7 +1336,7 @@ class _OrderDetailViewState extends State<OrderDetailView> {
                     ),
                   ),
 
-                  const Spacer(),
+                  const SizedBox(height: 12),
 
                   GestureDetector(
                     onTap: () => Navigator.pushNamed(context, RouteName.chat),

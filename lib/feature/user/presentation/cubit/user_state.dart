@@ -1,7 +1,10 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/models/user_model.dart';
+
 /// State cho User/Account Screen
 class UserState extends Equatable {
+  final UserModel? user;
   final String userName;
   final String userImage;
   final int pendingOrders;
@@ -14,6 +17,7 @@ class UserState extends Equatable {
   final int selectedBottomNavIndex;
 
   const UserState({
+    this.user,
     this.userName = '',
     this.userImage = '',
     this.pendingOrders = 0,
@@ -27,6 +31,7 @@ class UserState extends Equatable {
   });
 
   UserState copyWith({
+    UserModel? user,
     String? userName,
     String? userImage,
     int? pendingOrders,
@@ -39,6 +44,7 @@ class UserState extends Equatable {
     int? selectedBottomNavIndex,
   }) {
     return UserState(
+      user: user ?? this.user,
       userName: userName ?? this.userName,
       userImage: userImage ?? this.userImage,
       pendingOrders: pendingOrders ?? this.pendingOrders,
@@ -54,6 +60,7 @@ class UserState extends Equatable {
 
   @override
   List<Object?> get props => [
+        user,
         userName,
         userImage,
         pendingOrders,

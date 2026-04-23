@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'ingredient_state.dart';
 import '../../../../../../core/services/gian_hang_service.dart';
@@ -495,11 +496,68 @@ class IngredientCubit extends Cubit<IngredientState> {
     // Navigation will be handled by screen
   }
 
-  /// Buy product now - Navigate to ingredient detail to select shop and buy
-  void buyNow(Product product) {
-    // Không thể mua trực tiếp từ danh sách vì cần chọn gian hàng
-    // Sẽ được xử lý ở UI - navigate đến trang chi tiết
+  /// Buy product now - Fetch chi tiết để lấy gian hàng đầu tiên rổi chuyển màn hình thanh toán
+  Future<void> buyNow(BuildContext context, Product product) async {
     print('🛍️ [IngredientCubit] Buy now: ${product.name}');
+    
+    // Giữ màn hình loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00B40F)),
+      ),
+    );
+
+    try {
+      if (_nguyenLieuService == null) {
+        throw Exception('Service not available');
+      }
+
+      final response = await _nguyenLieuService!.getNguyenLieuDetail(product.maNguyenLieu!);
+      final detail = response.data;
+      final sellers = response.sellers.data;
+
+      // Tìm gian hàng khả dụng
+      var availableSeller = sellers.where((s) => s.conHang && s.isMoCua).firstOrNull ?? sellers.firstOrNull;
+
+      Navigator.pop(context); // Tắt loading
+
+      if (availableSeller == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Sản phẩm hiện đang hết hàng ở tất cả các gian hàng'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Navigate to payment
+      Navigator.pushNamed(
+        context,
+        '/payment',
+        arguments: {
+          'isBuyNow': true,
+          'maNguyenLieu': detail.maNguyenLieu,
+          'tenNguyenLieu': detail.tenNguyenLieu,
+          'maGianHang': availableSeller.maGianHang,
+          'tenGianHang': availableSeller.tenGianHang,
+          'hinhAnh': detail.hinhAnh,
+          'gia': product.price,
+          'donVi': detail.donVi ?? availableSeller.donViBan ?? 'Ký',
+          'soLuong': 1,
+        },
+      );
+    } catch (e) {
+      Navigator.pop(context); // Tắt loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi: Không thể lấy thông tin gian hàng'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   /// Add to cart - Navigate to ingredient detail to select shop and add

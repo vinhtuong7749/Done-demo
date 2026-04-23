@@ -139,6 +139,88 @@ class OrderService {
       rethrow;
     }
   }
+
+  /// Request Refund
+  Future<Map<String, dynamic>> refundOrder(RefundRequest request) async {
+    debugPrint('📦 [ORDER SERVICE] Requesting refund for order: ${request.orderId}');
+
+    try {
+      final token = await getToken();
+
+      if (token == null) {
+        throw Exception('User not logged in');
+      }
+
+      final url = Uri.parse('$_baseUrl/buyer/refund');
+      
+      debugPrint('📦 [ORDER SERVICE] Request URL: $url');
+      debugPrint('📦 [ORDER SERVICE] Payload: ${jsonEncode(request.toJson())}');
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(request.toJson()),
+      );
+
+      debugPrint('📦 [ORDER SERVICE] Response status: ${response.statusCode}');
+      debugPrint('📦 [ORDER SERVICE] Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonData = json.decode(utf8.decode(response.bodyBytes));
+        return jsonData;
+      } else {
+        try {
+          final errorData = json.decode(utf8.decode(response.bodyBytes));
+          throw Exception(errorData['detail'] ?? errorData['message'] ?? 'Không thể yêu cầu hoàn tiền');
+        } catch (e) {
+          if (e is FormatException) {
+            throw Exception('Lỗi hệ thống máy chủ (Mã lỗi: ${response.statusCode}). Vui lòng thử lại sau.');
+          }
+          rethrow;
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ [ORDER SERVICE] Refund error: $e');
+      rethrow;
+    }
+  }
+}
+
+class RefundRequest {
+  final String orderId;
+  final List<RefundItem> items;
+
+  RefundRequest({required this.orderId, required this.items});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'order_id': orderId,
+      'items': items.map((e) => e.toJson()).toList(),
+    };
+  }
+}
+
+class RefundItem {
+  final String ingredientId;
+  final String stallId;
+  final String reason;
+
+  RefundItem({
+    required this.ingredientId,
+    required this.stallId,
+    required this.reason,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ingredient_id': ingredientId,
+      'stall_id': stallId,
+      'reason': reason,
+    };
+  }
 }
 
 /// Model cho response danh sách đơn hàng
@@ -432,6 +514,8 @@ class OrderItemDetail {
   final IngredientInfo? nguyenLieu;
   final ShopInfo? gianHang;
   final String? donViBan;
+  final String? detailStatus;
+  final String? cancelReason;
 
   OrderItemDetail({
     required this.maNguyenLieu,
@@ -443,6 +527,8 @@ class OrderItemDetail {
     this.nguyenLieu,
     this.gianHang,
     this.donViBan,
+    this.detailStatus,
+    this.cancelReason,
   });
 
   OrderItemDetail copyWith({
@@ -455,6 +541,8 @@ class OrderItemDetail {
     IngredientInfo? nguyenLieu,
     ShopInfo? gianHang,
     String? donViBan,
+    String? detailStatus,
+    String? cancelReason,
   }) {
     return OrderItemDetail(
       maNguyenLieu: maNguyenLieu ?? this.maNguyenLieu,
@@ -466,6 +554,8 @@ class OrderItemDetail {
       nguyenLieu: nguyenLieu ?? this.nguyenLieu,
       gianHang: gianHang ?? this.gianHang,
       donViBan: donViBan ?? this.donViBan,
+      detailStatus: detailStatus ?? this.detailStatus,
+      cancelReason: cancelReason ?? this.cancelReason,
     );
   }
 
@@ -484,6 +574,8 @@ class OrderItemDetail {
           ? ShopInfo.fromJson(json['gian_hang'])
           : null,
       donViBan: json['don_vi_ban'],
+      detailStatus: json['detail_status'],
+      cancelReason: json['cancel_reason'],
     );
   }
 

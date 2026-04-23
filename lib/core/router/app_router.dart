@@ -33,6 +33,7 @@ import '../../feature/buyer/review/presentation/screen/review_page.dart';
 import '../../feature/buyer/cart/presentation/screen/cart_page.dart';
 import '../../feature/buyer/payment/presentation/screen/payment_page.dart';
 import '../../feature/buyer/order/presentation/order_detail/screen/order_detail_page.dart';
+import '../../feature/buyer/order/presentation/order_tracking/screen/order_tracking_page.dart';
 import '../../feature/buyer/order/presentation/order/screen/order_page.dart';
 import '../../feature/buyer/search/presentation/screen/search_screen.dart';
 import '../../feature/buyer/product/presentation/screen/category_product_screen.dart';
@@ -91,6 +92,9 @@ class AppRouter {
       case RouteName.productDetail:
         return _buildRoute(settings, const ProductDetailScreen());
 
+      case RouteName.monAnInstruction:
+        return _buildRoute(settings, const ProductDetailScreen());
+
       case RouteName.menu:
         return _buildRoute(settings, const MainScreen(initialIndex: 2));
 
@@ -114,6 +118,12 @@ class AppRouter {
         return _buildRoute(
           settings,
           OrderDetailPage(orderId: settings.arguments as String?),
+        );
+
+      case RouteName.orderTracking:
+        return _buildRoute(
+          settings,
+          OrderTrackingPage(orderId: settings.arguments as String? ?? ''),
         );
 
       case RouteName.orderList:

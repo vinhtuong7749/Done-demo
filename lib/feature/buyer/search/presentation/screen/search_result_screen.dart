@@ -7,6 +7,7 @@ import '../../../../../core/widgets/search_result_card.dart';
 import '../../../../../core/widgets/error_state_view.dart';
 import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
+import '../../../../buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 
 /// Search result screen displaying search results
 class SearchResultScreen extends StatelessWidget {
@@ -118,10 +119,9 @@ class _SearchResultScreenView extends StatelessWidget {
               imageUrl: dish.image,
               defaultIcon: Icons.restaurant,
               onTap: () {
-                AppRouter.navigateTo(
+                showMonAnIngredientBottomSheet(
                   context,
-                  RouteName.productDetail,
-                  arguments: dish.id,
+                  dish.id,
                 );
               },
             ),

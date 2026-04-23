@@ -11,6 +11,11 @@ class SellerManagementState extends Equatable {
   final int total;
   final bool hasMore;
 
+  // Pending Sellers
+  final bool isLoadingPending;
+  final List<dynamic> pendingSellers;
+  final int totalPending;
+
   const SellerManagementState({
     this.isLoading = false,
     this.isLoadingMore = false,
@@ -20,6 +25,9 @@ class SellerManagementState extends Equatable {
     this.totalPages = 1,
     this.total = 0,
     this.hasMore = true,
+    this.isLoadingPending = false,
+    this.pendingSellers = const [],
+    this.totalPending = 0,
   });
 
   SellerManagementState copyWith({
@@ -31,6 +39,9 @@ class SellerManagementState extends Equatable {
     int? totalPages,
     int? total,
     bool? hasMore,
+    bool? isLoadingPending,
+    List<dynamic>? pendingSellers,
+    int? totalPending,
   }) {
     return SellerManagementState(
       isLoading: isLoading ?? this.isLoading,
@@ -41,6 +52,9 @@ class SellerManagementState extends Equatable {
       totalPages: totalPages ?? this.totalPages,
       total: total ?? this.total,
       hasMore: hasMore ?? this.hasMore,
+      isLoadingPending: isLoadingPending ?? this.isLoadingPending,
+      pendingSellers: pendingSellers ?? this.pendingSellers,
+      totalPending: totalPending ?? this.totalPending,
     );
   }
 
@@ -54,5 +68,8 @@ class SellerManagementState extends Equatable {
         totalPages,
         total,
         hasMore,
+        isLoadingPending,
+        pendingSellers,
+        totalPending,
       ];
 }

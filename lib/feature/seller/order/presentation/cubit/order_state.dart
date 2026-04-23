@@ -2,27 +2,39 @@ import 'package:equatable/equatable.dart';
 import '../../../../../core/models/seller_order_model.dart';
 
 enum OrderStatus {
-  pending, // Chờ xác nhận (chua_xac_nhan)
-  confirmed, // Đã xác nhận (da_xac_nhan)
-  delivering, // Đang giao (dang_giao)
-  completed, // Hoàn tất (hoan_tat)
-  cancelled, // Đã hủy (da_huy)
+  pending,        // Chờ xác nhận  (chua_xac_nhan)
+  waitingShipper, // Chờ shipper   (da_xac_nhan) - seller đã xác nhận, chờ shipper tới lấy
+  delivering,     // Đang giao      (dang_giao)  - shipper đang giao
+  completed,      // Hoàn tất        (hoan_tat)
+  cancelled,      // Đã hủy          (da_huy)
 }
 
 /// Convert từ API status string sang enum
 OrderStatus parseOrderStatus(String status) {
-  switch (status) {
+  switch (status.toLowerCase()) {
     case 'chua_xac_nhan':
+    case 'cho_xac_nhan':
       return OrderStatus.pending;
     case 'da_xac_nhan':
-      return OrderStatus.confirmed;
+    case 'da_duyet':
+    case 'da_xac_nhan_1_phan':
+    case 'cho_shipper':
+    case 'dang_tim_shipper':
+    case 'cho_lay_hang':
+      return OrderStatus.waitingShipper;  // Seller đã xác nhận, chờ shipper
     case 'dang_giao':
+    case 'da_giao_shipper':
       return OrderStatus.delivering;
     case 'hoan_tat':
+    case 'da_giao':
+    case 'completed':
       return OrderStatus.completed;
     case 'da_huy':
+    case 'huy':
+    case 'cancelled':
       return OrderStatus.cancelled;
     default:
+      // Bất kỳ status nào không rõ -> phân là pending để không bị mất
       return OrderStatus.pending;
   }
 }
@@ -123,6 +135,9 @@ class SellerOrderState extends Equatable {
   final double totalToday;
   final int selectedNavIndex;
   final OrderStatus selectedTab;
+  // --- Thông báo đơn hàng mới ---
+  final bool hasNewOrder;
+  final int newOrderCount;
 
   const SellerOrderState({
     this.isLoading = false,
@@ -131,6 +146,8 @@ class SellerOrderState extends Equatable {
     this.totalToday = 0,
     this.selectedNavIndex = 0,
     this.selectedTab = OrderStatus.pending,
+    this.hasNewOrder = false,
+    this.newOrderCount = 0,
   });
 
   /// Factory method để tạo state rỗng
@@ -148,6 +165,8 @@ class SellerOrderState extends Equatable {
     double? totalToday,
     int? selectedNavIndex,
     OrderStatus? selectedTab,
+    bool? hasNewOrder,
+    int? newOrderCount,
   }) {
     return SellerOrderState(
       isLoading: isLoading ?? this.isLoading,
@@ -156,29 +175,31 @@ class SellerOrderState extends Equatable {
       totalToday: totalToday ?? this.totalToday,
       selectedNavIndex: selectedNavIndex ?? this.selectedNavIndex,
       selectedTab: selectedTab ?? this.selectedTab,
+      hasNewOrder: hasNewOrder ?? this.hasNewOrder,
+      newOrderCount: newOrderCount ?? this.newOrderCount,
     );
   }
 
   List<SellerOrder> get filteredOrders {
-    if (selectedTab == OrderStatus.pending) {
-      return orders.where((order) => order.status == OrderStatus.pending).toList();
-    } else if (selectedTab == OrderStatus.confirmed || selectedTab == OrderStatus.delivering) {
-      // Tab "Đang giao" bao gồm cả đã xác nhận và đang giao
-      return orders.where((order) => 
-        order.status == OrderStatus.confirmed || 
-        order.status == OrderStatus.delivering
-      ).toList();
-    } else {
-      return orders.where((order) => order.status == selectedTab).toList();
+    switch (selectedTab) {
+      case OrderStatus.pending:
+        return orders.where((o) => o.status == OrderStatus.pending).toList();
+      case OrderStatus.waitingShipper:
+        return orders.where((o) => o.status == OrderStatus.waitingShipper).toList();
+      case OrderStatus.delivering:
+        return orders.where((o) => o.status == OrderStatus.delivering).toList();
+      case OrderStatus.completed:
+        return orders.where((o) => o.status == OrderStatus.completed).toList();
+      case OrderStatus.cancelled:
+        return orders.where((o) => o.status == OrderStatus.cancelled).toList();
     }
   }
 
   int get pendingCount => orders.where((o) => o.status == OrderStatus.pending).length;
-  int get deliveringCount => orders.where((o) => 
-    o.status == OrderStatus.confirmed || o.status == OrderStatus.delivering
-  ).length;
+  int get waitingShipperCount => orders.where((o) => o.status == OrderStatus.waitingShipper).length;
+  int get deliveringCount => orders.where((o) => o.status == OrderStatus.delivering).length;
   int get completedCount => orders.where((o) => o.status == OrderStatus.completed).length;
 
   @override
-  List<Object?> get props => [isLoading, errorMessage, orders, totalToday, selectedNavIndex, selectedTab];
+  List<Object?> get props => [isLoading, errorMessage, orders, totalToday, selectedNavIndex, selectedTab, hasNewOrder, newOrderCount];
 }

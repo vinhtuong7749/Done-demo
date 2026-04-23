@@ -77,24 +77,33 @@ class _CartBadgeIconState extends State<CartBadgeIcon> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          SvgPicture.asset(
-            'assets/img/add_shopping_cart.svg',
-            width: widget.iconSize,
-            height: widget.iconSize,
-            colorFilter: widget.iconColor != null ? ColorFilter.mode(widget.iconColor!, BlendMode.srcIn) : null,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+            ),
+            child: SvgPicture.asset(
+              'assets/img/add_shopping_cart.svg',
+              width: widget.iconSize,
+              height: widget.iconSize,
+              colorFilter: widget.iconColor != null ? ColorFilter.mode(widget.iconColor!, BlendMode.srcIn) : const ColorFilter.mode(Color(0xFF333333), BlendMode.srcIn),
+            ),
           ),
           if (_itemCount > 0)
             Positioned(
-              right: -6,
-              top: -6,
+              right: -2,
+              top: -2,
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: widget.badgeBackgroundColor ?? const Color(0xFFFF0000),
+                  color: widget.badgeBackgroundColor ?? const Color(0xFFFF3B30),
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                  border: Border.all(color: Colors.white, width: 1.5),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 4, offset: const Offset(0, 2))],
                 ),
-                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
                 child: Center(
                   child: Text(
                     _itemCount > 99 ? '99+' : _itemCount.toString(),
@@ -106,12 +115,16 @@ class _CartBadgeIconState extends State<CartBadgeIcon> {
             ),
           if (_isLoading)
             Positioned(
-              right: -6,
-              top: -6,
+              right: -2,
+              top: -2,
               child: Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(color: widget.badgeBackgroundColor ?? const Color(0xFFFF0000), shape: BoxShape.circle),
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: widget.badgeBackgroundColor ?? const Color(0xFFFF3B30), 
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
                 child: const Center(child: SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white))),
               ),
             ),

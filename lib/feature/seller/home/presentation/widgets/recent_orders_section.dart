@@ -22,14 +22,14 @@ class RecentOrdersSection extends StatelessWidget {
             const Text(
               'Đơn hàng mới',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1B5E20),
               ),
             ),
             TextButton(
               onPressed: () => AppRouter.navigateTo(context, RouteName.sellerOrder),
-              child: const Text('Tất cả', style: TextStyle(color: Color(0xFF26CD3A))),
+              child: const Text('Tất cả', style: TextStyle(color: Color(0xFF26CD3A), fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -83,22 +83,22 @@ class RecentOrdersSection extends StatelessWidget {
               children: [
                 Text(
                   order.chiTietDonHang.isNotEmpty ? order.chiTietDonHang[0].tenNguyenLieu : 'Đơn hàng',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   '#${order.maDonHang} • ${_formatTime(order.thoiGianGiaoHang)}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 Text(
                   cubit.formatCurrency(order.tongTien),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF26CD3A),
-                    fontSize: 15,
+                    fontSize: 18,
                   ),
                 ),
               ],
@@ -109,11 +109,10 @@ class RecentOrdersSection extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1B5E20),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              minimumSize: const Size(0, 32),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text('Xử lý', style: TextStyle(fontSize: 13)),
+            child: const Text('Xử lý', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

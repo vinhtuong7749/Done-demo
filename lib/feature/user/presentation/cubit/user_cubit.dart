@@ -32,6 +32,7 @@ class UserCubit extends Cubit<UserState> {
 
         // Cập nhật state với thông tin người dùng thực
         emit(state.copyWith(
+          user: user,
           userName: user.tenNguoiDung,
           userImage: 'assets/img/user_profile_image.png', // Sử dụng ảnh mặc định
           pendingOrders: pendingOrders ?? 1,

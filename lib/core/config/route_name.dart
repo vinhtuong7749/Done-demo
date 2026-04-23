@@ -37,6 +37,7 @@ class RouteName {
   // Product Routes
   static const String productList = '/products';
   static const String productDetail = '/product-detail';
+  static const String monAnInstruction = '/mon-an-instruction';
   static const String productSearch = '/product-search';
   static const String productFilter = '/product-filter';
   static const String menu = '/menu';

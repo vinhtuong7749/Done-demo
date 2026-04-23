@@ -192,16 +192,27 @@ class OrderDetailItem {
     
     // Parse từ san_pham_ban nếu có (old format)
     String finalTenNL = tenNL.isNotEmpty ? tenNL : maNguyenLieu;
-    String? finalDonVi;
-    String? finalHinhAnh;
+    String? finalDonVi = json['don_vi'];
+    String? finalHinhAnh = _parseImageUrl(
+      json['hinh_anh'] ?? 
+      json['image'] ?? 
+      json['ingredient_image'] ?? 
+      json['product_image'] ??
+      json['hinh_anh_url']
+    );
     
-    final sanPhamBan = json['san_pham_ban'] as Map<String, dynamic>?;
+    final sanPhamBan = (json['san_pham_ban'] ?? json['san_pham']) as Map<String, dynamic>?;
     if (sanPhamBan != null) {
-      final nguyenLieu = sanPhamBan['nguyen_lieu'] as Map<String, dynamic>?;
+      final nguyenLieu = (sanPhamBan['nguyen_lieu'] ?? sanPhamBan['san_pham']) as Map<String, dynamic>?;
       if (nguyenLieu != null) {
-        finalTenNL = nguyenLieu['ten_nguyen_lieu'] as String? ?? finalTenNL;
-        finalDonVi = nguyenLieu['don_vi'] as String?;
-        finalHinhAnh = _parseImageUrl(nguyenLieu['hinh_anh'] ?? nguyenLieu['image']);
+        finalTenNL = (nguyenLieu['ten_nguyen_lieu'] ?? nguyenLieu['ten_san_pham']) as String? ?? finalTenNL;
+        finalDonVi = nguyenLieu['don_vi'] as String? ?? finalDonVi;
+        finalHinhAnh = _parseImageUrl(nguyenLieu['hinh_anh'] ?? nguyenLieu['image']) ?? finalHinhAnh;
+      } else {
+        // Fallback to checking directly in sanPhamBan
+        finalTenNL = (sanPhamBan['ten_nguyen_lieu'] ?? sanPhamBan['ten_san_pham']) as String? ?? finalTenNL;
+        finalDonVi = sanPhamBan['don_vi'] as String? ?? finalDonVi;
+        finalHinhAnh = _parseImageUrl(sanPhamBan['hinh_anh'] ?? sanPhamBan['image']) ?? finalHinhAnh;
       }
     }
 

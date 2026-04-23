@@ -11,7 +11,11 @@ class GeocodingService {
     if (query.length < 3) return [];
 
     try {
-      final url = Uri.parse('$_baseUrl?q=${Uri.encodeComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=vi');
+      String finalQuery = query;
+      if (!finalQuery.toLowerCase().contains('đà nẵng') && !finalQuery.toLowerCase().contains('da nang')) {
+        finalQuery = '$query, Đà Nẵng';
+      }
+      final url = Uri.parse('$_baseUrl?q=${Uri.encodeComponent(finalQuery)}&format=json&limit=5&addressdetails=1&accept-language=vi&countrycodes=vn');
       
       debugPrint('🗺️ [GEOCODING] GET $url');
       
@@ -24,7 +28,32 @@ class GeocodingService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((item) => MapSuggestion.fromJson(item)).toList();
+        
+        // Extract house number prefix from original query (e.g. "50", "95A")
+        String? houseNumber;
+        final match = RegExp(r'^(\d+[a-zA-Z]?)\s+.*$').firstMatch(query.trim());
+        if (match != null) {
+          houseNumber = match.group(1);
+        }
+
+        return data.map((item) {
+          final suggestion = MapSuggestion.fromJson(item);
+          
+          // Inject house number if the user typed it but Nominatim omitted it
+          if (houseNumber != null && houseNumber.isNotEmpty) {
+            final parts = suggestion.displayName.split(',').map((e) => e.trim()).toList();
+            // If the first part isn't already the house number
+            if (parts.isNotEmpty && !parts[0].startsWith(houseNumber)) {
+              return MapSuggestion(
+                displayName: '$houseNumber, ${suggestion.displayName}',
+                lat: suggestion.lat,
+                lon: suggestion.lon,
+              );
+            }
+          }
+          
+          return suggestion;
+        }).toList();
       } else {
         debugPrint('❌ [GEOCODING] Error status: ${response.statusCode}');
         return [];
@@ -53,6 +82,33 @@ class MapSuggestion {
       lat: double.tryParse(json['lat'] ?? '0') ?? 0,
       lon: double.tryParse(json['lon'] ?? '0') ?? 0,
     );
+  }
+
+  String get mainText {
+    if (displayName.isEmpty) return '';
+    final parts = displayName.split(',').map((e) => e.trim()).toList();
+    if (parts.length > 1) {
+      // If the first part is a short number or contains only alphanumeric like '50A', combine it with street
+      if (RegExp(r'^[\d]+[a-zA-Z]?$').hasMatch(parts[0])) {
+         return '${parts[0]} ${parts[1]}';
+      }
+      return parts.first;
+    }
+    return displayName;
+  }
+
+  String get secondaryText {
+    if (displayName.isEmpty) return '';
+    final parts = displayName.split(',').map((e) => e.trim()).toList();
+    if (parts.length > 1) {
+      int skipCount = RegExp(r'^[\d]+[a-zA-Z]?$').hasMatch(parts[0]) ? 2 : 1;
+      final secondaryParts = parts.skip(skipCount).where((e) {
+        final lower = e.toLowerCase();
+        return lower != 'việt nam' && lower != 'vietnam' && !RegExp(r'^\d{5,6}$').hasMatch(e);
+      });
+      return secondaryParts.join(', ');
+    }
+    return '';
   }
 
   @override

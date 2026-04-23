@@ -32,8 +32,16 @@ class _SellerOrderViewState extends State<SellerOrderView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<SellerOrderCubit>().loadOrders();
+        context.read<SellerOrderCubit>().startPolling();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    // Polling tự dừng khi Cubit bị đóng, nhưng gọi trước để rõ ràng
+    context.read<SellerOrderCubit>().stopPolling();
+    super.dispose();
   }
 
   @override
@@ -41,7 +49,82 @@ class _SellerOrderViewState extends State<SellerOrderView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
-        child: BlocBuilder<SellerOrderCubit, SellerOrderState>(
+        child: BlocConsumer<SellerOrderCubit, SellerOrderState>(
+          listenWhen: (prev, curr) => curr.hasNewOrder && !prev.hasNewOrder,
+          listener: (context, state) {
+            // Hiển thị thông báo nổi bật khi có đơn hàng mới
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                duration: const Duration(seconds: 5),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+                content: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1B5E20), Color(0xFF2F8000)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2F8000).withValues(alpha: 0.5),
+                        blurRadius: 20,
+                        offset: const Offset(0, 6),
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.notifications_active, color: Colors.white, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Đơn hàng mới! (${state.newOrderCount} đơn)',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Text(
+                              'Có đơn hàng đang chờ xác nhận',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          context.read<SellerOrderCubit>().selectTab(OrderStatus.pending);
+                          context.read<SellerOrderCubit>().clearNewOrderNotification();
+                        },
+                        child: const Text('Xem ngay', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
           builder: (context, state) {
             if (state.isLoading) {
               return const BuyerLoading(message: 'Đang tải danh sách đơn hàng...');
@@ -142,54 +225,97 @@ class _SellerOrderViewState extends State<SellerOrderView> {
 
   Widget _buildStatusTabs(BuildContext context, SellerOrderState state) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8, offset: const Offset(0, 2))],
       ),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
         children: [
-          _buildStatusTab(context, label: 'Chờ xác nhận', status: OrderStatus.pending, isActive: state.selectedTab == OrderStatus.pending, count: state.pendingCount),
-          const SizedBox(width: 20),
-          _buildStatusTab(context, label: 'Đang giao', status: OrderStatus.delivering, isActive: state.selectedTab == OrderStatus.delivering, count: state.deliveringCount),
-          const SizedBox(width: 20),
-          _buildStatusTab(context, label: 'Hoàn tất', status: OrderStatus.completed, isActive: state.selectedTab == OrderStatus.completed, count: state.completedCount),
+          _buildStatusTab(context,
+            label: 'Chờ duyệt',
+            status: OrderStatus.pending,
+            isActive: state.selectedTab == OrderStatus.pending,
+            count: state.pendingCount,
+          ),
+          _buildStatusTab(context,
+            label: 'Chờ lấy',
+            status: OrderStatus.waitingShipper,
+            isActive: state.selectedTab == OrderStatus.waitingShipper,
+            count: state.waitingShipperCount,
+          ),
+          _buildStatusTab(context,
+            label: 'Đang giao',
+            status: OrderStatus.delivering,
+            isActive: state.selectedTab == OrderStatus.delivering,
+            count: state.deliveringCount,
+          ),
+          _buildStatusTab(context,
+            label: 'Hoàn tất',
+            status: OrderStatus.completed,
+            isActive: state.selectedTab == OrderStatus.completed,
+            count: state.completedCount,
+          ),
         ],
       ),
     );
   }
 
   Widget _buildStatusTab(BuildContext context, {required String label, required OrderStatus status, required bool isActive, required int count}) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => context.read<SellerOrderCubit>().selectTab(status),
-        child: Column(
+    return GestureDetector(
+      onTap: () => context.read<SellerOrderCubit>().selectTab(status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? const Color(0xFF2F8000) : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isActive ? const Color(0xFF2F8000) : const Color(0xFFE5E7EB),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(label, style: TextStyle(fontFamily: 'Inter', fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, fontSize: 14, color: isActive ? const Color(0xFF2F8000) : const Color(0xFF6B7280)), textAlign: TextAlign.center),
-                ),
-                if (isActive && count > 0) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: const Color(0xFF2F8000), borderRadius: BorderRadius.circular(10)),
-                    child: Text('$count', style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 11, color: Colors.white)),
-                  ),
-                ],
-              ],
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 14,
+                color: isActive ? Colors.white : const Color(0xFF4B5563),
+              ),
             ),
-            const SizedBox(height: 8),
-            if (isActive) Container(height: 3, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFF2F8000), borderRadius: BorderRadius.circular(1.5))),
+            if (count > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isActive ? Colors.white : const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    color: isActive ? const Color(0xFF2F8000) : Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
+
+  // The _buildStatusTab method has been moved above for scope.
 
   Widget _buildOrderList(BuildContext context, SellerOrderState state) {
     final orders = state.filteredOrders;
@@ -248,8 +374,8 @@ class _SellerOrderViewState extends State<SellerOrderView> {
   String _getEmptyMessage(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending: return 'Chưa có đơn hàng chờ xác nhận';
-      case OrderStatus.confirmed:
-      case OrderStatus.delivering: return 'Chưa có đơn hàng đang giao';
+      case OrderStatus.waitingShipper: return 'Chưa có đơn hàng chờ shipper đến lấy';
+      case OrderStatus.delivering: return 'Chưa có đơn hàng đang được giao';
       case OrderStatus.completed: return 'Chưa có đơn hàng hoàn tất';
       case OrderStatus.cancelled: return 'Chưa có đơn hàng đã hủy';
     }
@@ -537,7 +663,8 @@ class _SellerOrderViewState extends State<SellerOrderView> {
     final cubit = context.read<SellerOrderCubit>();
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     
-    final result = await cubit.confirmOrder(order.id);
+    final ingredientIds = order.products.map((p) => p.maNguyenLieu).toList();
+    final result = await cubit.confirmOrder(order.id, ingredientIds: ingredientIds);
     if (!mounted) return;
     
     if (result != null && result.success) {
@@ -570,7 +697,7 @@ class _SellerOrderViewState extends State<SellerOrderView> {
   String _getStatusText(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending: return 'Chờ xác nhận';
-      case OrderStatus.confirmed: return 'Đã xác nhận';
+      case OrderStatus.waitingShipper: return 'Chờ shipper';
       case OrderStatus.delivering: return 'Đang giao';
       case OrderStatus.completed: return 'Hoàn tất';
       case OrderStatus.cancelled: return 'Đã hủy';
@@ -579,18 +706,18 @@ class _SellerOrderViewState extends State<SellerOrderView> {
 
   Color _getStatusColor(OrderStatus status) {
     switch (status) {
-      case OrderStatus.pending: return const Color(0xFFD97706);
-      case OrderStatus.confirmed: return const Color(0xFF2563EB);
-      case OrderStatus.delivering: return const Color(0xFF7C3AED);
-      case OrderStatus.completed: return const Color(0xFF059669);
-      case OrderStatus.cancelled: return const Color(0xFFDC2626);
+      case OrderStatus.pending: return const Color(0xFFD97706);       // cam
+      case OrderStatus.waitingShipper: return const Color(0xFF2563EB); // xanh dương
+      case OrderStatus.delivering: return const Color(0xFF7C3AED);     // tím
+      case OrderStatus.completed: return const Color(0xFF059669);       // xanh lá
+      case OrderStatus.cancelled: return const Color(0xFFDC2626);       // đỏ
     }
   }
 
   Color _getStatusBgColor(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending: return const Color(0xFFFEF3C7);
-      case OrderStatus.confirmed: return const Color(0xFFDBEAFE);
+      case OrderStatus.waitingShipper: return const Color(0xFFDBEAFE);
       case OrderStatus.delivering: return const Color(0xFFEDE9FE);
       case OrderStatus.completed: return const Color(0xFFD1FAE5);
       case OrderStatus.cancelled: return const Color(0xFFFEE2E2);

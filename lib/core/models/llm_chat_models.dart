@@ -80,10 +80,25 @@ class LlmChatResponse {
         .whereType<Map<String, dynamic>>()
         .toList();
 
+    String rawReply = (json['reply'] ?? '').toString();
+    // Khi Ollama bị lỗi kết nối, reply trả về error message nhưng dishes vẫn có dữ liệu RAG.
+    // Trong trường hợp này, tạo reply thân thiện hơn dựa vào intent và số lượng kết quả.
+    final bool hasOllamaError = rawReply.contains('Xin lỗi, tôi đang gặp sự cố kết nối') ||
+        rawReply.contains('Connection refused');
+    if (hasOllamaError) {
+      if (dishesJson.isNotEmpty) {
+        rawReply = 'Dựa trên yêu cầu của bạn, mình tìm được ${dishesJson.length} món ăn phù hợp. Hãy chọn món bạn muốn nấu nhé! 🍽️';
+      } else if (shopsJson.isNotEmpty) {
+        rawReply = 'Mình tìm được ${shopsJson.length} gian hàng phù hợp cho bạn. Hãy xem thử nhé! 🛒';
+      } else {
+        rawReply = 'Xin lỗi, trợ lý AI đang bận. Vui lòng thử lại sau hoặc tìm kiếm với từ khóa cụ thể hơn.';
+      }
+    }
+
     return LlmChatResponse(
       sessionId: (json['session_id'] ?? '').toString(),
       intent: (json['intent'] ?? '').toString(),
-      reply: (json['reply'] ?? '').toString(),
+      reply: rawReply,
       dishes: dishesJson.map(LlmDishSuggestion.fromJson).toList(),
       shops: shopsJson.map(LlmShopSuggestion.fromJson).toList(),
       totalFound: _parseInt(json['total_found']),

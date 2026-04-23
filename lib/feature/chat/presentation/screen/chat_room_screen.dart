@@ -58,10 +58,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         },
         builder: (context, state) {
           return Scaffold(
+            backgroundColor: const Color(0xFFF5F9F6), // Stitch Mint
             appBar: AppBar(
               title: Text(
                 widget.title.isNotEmpty ? widget.title : 'Trò chuyện',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  color: Color(0xFF1B5E20), // Forest Green
+                  fontWeight: FontWeight.w700,
+                  fontSize: 20,
+                ),
               ),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              scrolledUnderElevation: 2,
+              shadowColor: Colors.black.withValues(alpha: 0.1),
+              iconTheme: const IconThemeData(color: Color(0xFF1B5E20)),
+              centerTitle: true,
               actions: [
                 IconButton(
                   tooltip: 'Tải lại',
@@ -126,12 +139,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isMine
-                                        ? const Color(0xFFDFF3FF)
+                                        ? const Color(0xFF26CD3A) // Stitch primary green
                                         : Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(0xFFE0E0E0),
-                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.05),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -139,7 +156,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     children: [
                                       if (message.messageText != null &&
                                           message.messageText!.isNotEmpty)
-                                        Text(message.messageText!),
+                                        Text(
+                                          message.messageText!,
+                                          style: TextStyle(
+                                            fontFamily: 'Roboto',
+                                            fontSize: 15,
+                                            color: isMine ? Colors.white : const Color(0xFF1C1C1E),
+                                          ),
+                                        ),
                                       if (message.imageUrl != null &&
                                           message.imageUrl!.isNotEmpty)
                                         Padding(
@@ -183,9 +207,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                           ),
                                           child: Text(
                                             _formatTime(message.sentAt!),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 11,
-                                              color: Colors.grey,
+                                              color: isMine ? Colors.white70 : Colors.grey[600],
                                             ),
                                           ),
                                         ),
@@ -197,47 +221,86 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           ),
                         ),
                 ),
-                SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Gửi ảnh',
-                          onPressed: state.isSending
-                              ? null
-                              : () => _showImagePickerOptions(context),
-                          icon: const Icon(Icons.image_outlined),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _textController,
-                            minLines: 1,
-                            maxLines: 4,
-                            decoration: const InputDecoration(
-                              hintText: 'Nhập tin nhắn...',
-                              border: OutlineInputBorder(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF5F9F6),
+                              shape: BoxShape.circle,
                             ),
-                            onSubmitted: (_) => _send(context),
+                            child: IconButton(
+                              tooltip: 'Gửi ảnh',
+                              onPressed: state.isSending
+                                  ? null
+                                  : () => _showImagePickerOptions(context),
+                              icon: const Icon(Icons.image_outlined, color: Color(0xFF1B5E20)),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filled(
-                          onPressed: state.isSending
-                              ? null
-                              : () => _send(context),
-                          icon: state.isSending
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF5F9F6),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: TextField(
+                                controller: _textController,
+                                minLines: 1,
+                                maxLines: 4,
+                                style: const TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 15,
+                                ),
+                                decoration: const InputDecoration(
+                                  hintText: 'Nhập tin nhắn...',
+                                  hintStyle: TextStyle(color: Color(0xFF8E8E93)),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                                onSubmitted: (_) => _send(context),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF26CD3A),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: state.isSending
+                                  ? null
+                                  : () => _send(context),
+                              icon: state.isSending
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.send, color: Colors.white, size: 20),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

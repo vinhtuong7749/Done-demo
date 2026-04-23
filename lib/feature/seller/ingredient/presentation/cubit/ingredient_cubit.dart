@@ -13,7 +13,7 @@ class SellerIngredientCubit extends Cubit<SellerIngredientState> {
     try {
       final response = await NhomNguyenLieuService.getSellerProducts(
         page: page,
-        limit: 12,
+        limit: 12, // Khôi phục về 12 vì backend không hỗ trợ limit lớn
         sort: 'ngay_cap_nhat',
         order: 'desc',
       );

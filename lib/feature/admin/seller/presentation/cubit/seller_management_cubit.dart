@@ -96,13 +96,66 @@ class SellerManagementCubit extends Cubit<SellerManagementState> {
       );
 
       if (success) {
-        // Reload danh sách sau khi thêm thành công
         await loadSellers();
         return true;
       }
       return false;
     } catch (e) {
       debugPrint('❌ [SELLER MANAGEMENT] Add seller error: $e');
+      return false;
+    }
+  }
+
+  Future<void> loadPendingSellers() async {
+    emit(state.copyWith(isLoadingPending: true, errorMessage: null));
+    try {
+      final response = await _service.getPendingSellers(page: 1, limit: 50);
+      if (response['success'] == true) {
+        emit(state.copyWith(
+          isLoadingPending: false,
+          pendingSellers: response['data'],
+          totalPending: response['meta']['total'],
+        ));
+      } else {
+        emit(state.copyWith(
+          isLoadingPending: false,
+          errorMessage: 'Không thể tải danh sách chờ',
+        ));
+      }
+    } catch (e) {
+      debugPrint('❌ [SELLER MANAGEMENT] Load pending error: $e');
+      emit(state.copyWith(
+        isLoadingPending: false,
+        errorMessage: 'Lỗi: ${e.toString()}',
+      ));
+    }
+  }
+
+  Future<bool> createStallForPendingSeller({
+    required String maNguoiDung,
+    required String tenGianHang,
+    required String stallLocation,
+    required int gridCol,
+    required int gridRow,
+  }) async {
+    try {
+      final success = await _service.registerStall(
+        maNguoiDung: maNguoiDung,
+        tenGianHang: tenGianHang,
+        stallLocation: stallLocation,
+        gridCol: gridCol,
+        gridRow: gridRow,
+      );
+
+      if (success) {
+        // Refresh both lists
+        await loadSellers();
+        await loadPendingSellers();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('❌ [SELLER MANAGEMENT] Create stall error: $e');
       return false;
     }
   }

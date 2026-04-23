@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dngo/core/config/route_name.dart';
 import 'package:dngo/core/models/generated_menu_models.dart';
+import 'package:dngo/feature/buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 
 class MenuDetailScreen extends StatefulWidget {
   const MenuDetailScreen({super.key});
@@ -313,10 +314,9 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
               return;
             }
 
-            Navigator.pushNamed(
+            showMonAnIngredientBottomSheet(
               context,
-              RouteName.productDetail,
-              arguments: meal.dish.dishId,
+              meal.dish.dishId,
             );
           },
           child: Container(

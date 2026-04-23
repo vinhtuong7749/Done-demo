@@ -6,6 +6,7 @@ import '../../../../../core/services/nhom_nguyen_lieu_service.dart';
 import '../../../../../core/services/revenue_service.dart';
 import '../../../../../core/services/gian_hang_service.dart';
 import '../../../../../core/services/local_storage_service.dart';
+import '../../../../../core/config/app_config.dart';
 import 'home_state.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/models/seller_order_model.dart' as model;
@@ -25,8 +26,9 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
     try {
       // 1. Lấy thông tin shop (user name và trạng thái gian hàng)
       String shopName = 'Cửa hàng của bạn';
-      bool isStoreOpen = state.isStoreOpen; // Giữ giá trị hiện tại làm mặc định
+      bool isStoreOpen = true; // Mặc định là mở cửa để UX tốt hơn khi mới load hoặc nếu API lỗi
       String? maGianHang;
+      int totalProducts = 0;
 
       try {
         final user = await _authService.getCurrentUser();
@@ -42,8 +44,13 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         // Lấy mã gian hàng từ sản phẩm đầu tiên để fetch chi tiết gian hàng
         final productsResponse = await NhomNguyenLieuService.getSellerProducts(limit: 1);
         if (productsResponse.data.isNotEmpty) {
-          maGianHang = productsResponse.data[0]['ma_gian_hang'];
-          if (maGianHang != null) {
+          maGianHang = productsResponse.data[0]['ma_gian_hang']?.toString();
+        }
+        if (maGianHang == null || maGianHang.isEmpty) {
+          maGianHang = user.maNguoiDung;
+        }
+
+        if (maGianHang != null) {
             // Kiểm tra trạng thái lưu local theo maGianHang
             final savedStatus = _localStorageService.getShopStatus(maGianHang!);
             if (savedStatus != null) {
@@ -62,13 +69,13 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
                 await _localStorageService.saveShopStatus(user.maNguoiDung, apiIsStoreOpen ? 'mo_cua' : 'dong_cua');
                 
                 isStoreOpen = apiIsStoreOpen;
+                totalProducts = shopDetail.detail.soSanPham; // Lập lấy count đúng từ api gian-hang
                 debugPrint('🏪 [HOME_CUBIT] Initialized from API: $apiStatus (isStoreOpen: $isStoreOpen)');
               }
             } catch (e) {
               debugPrint('⚠️ [HOME_CUBIT] API Shop Detail failed, keeping local/default status. Error: $e');
             }
           }
-        }
       } catch (e) {
         debugPrint('❌ [HOME_CUBIT] Error in shop initialization: $e');
       }
@@ -86,8 +93,8 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         recentOrders = ordersResponse.items.take(5).toList();
 
         for (final order in ordersResponse.items) {
-          // Tính đơn hàng chờ xác nhận
-          if (order.tinhTrangDonHang == 'cho_xac_nhan') {
+          // Tính đơn hàng chờ xác nhận (API trả về 'chua_xac_nhan')
+          if (order.tinhTrangDonHang == 'chua_xac_nhan' || order.tinhTrangDonHang == 'cho_xac_nhan') {
             pendingOrderCount++;
           }
 
@@ -104,21 +111,75 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         }
       }
 
-      // 3. Lấy thông tin sản phẩm và lọc hàng sắp hết
+      // 3. Lấy thông tin sản phẩm và lọc hàng sắp hết 
+      // Tăng limit lên 100 để có thể quét được nhiều sản phẩm sắp hết hàng hơn
       final productsResponse = await NhomNguyenLieuService.getSellerProducts(limit: 100);
-      int totalProducts = 0;
       int activeProducts = 0;
       List<dynamic> lowStockProducts = [];
 
+      // Build map ingredientId → imageUrl để inject vào đơn hàng
+      final Map<String, String> ingredientImageMap = {};
+
       if (productsResponse.data.isNotEmpty) {
         totalProducts = productsResponse.meta.total;
+        activeProducts = totalProducts; // Sử dụng tổng số từ backend
         for (var prod in productsResponse.data) {
-          activeProducts++; // Giả định tất cả trong danh sách là đang bán
-          final stock = prod['so_luong_ban'] ?? 0;
+          int stock = 0;
+          final dynamic rawStock = prod['so_luong_ban'];
+          if (rawStock is int) {
+            stock = rawStock;
+          } else if (rawStock is String) {
+            stock = int.tryParse(rawStock) ?? 0;
+          }
+
+          // Kiểm tra và hiển thị cảnh báo nếu stock <= 5
           if (stock <= 5) {
             lowStockProducts.add(prod);
           }
+
+          // Lưu ảnh theo ma_nguyen_lieu để dùng cho recentOrders
+          final maNL = prod['ma_nguyen_lieu']?.toString();
+          final hinhAnh = prod['hinh_anh']?.toString() ?? prod['image']?.toString();
+          if (maNL != null && maNL.isNotEmpty && hinhAnh != null && hinhAnh.isNotEmpty) {
+            final imageUrl = hinhAnh.startsWith('http')
+                ? hinhAnh
+                : '${AppConfig.imageBaseUrl}${hinhAnh.startsWith('/') ? '' : '/'}$hinhAnh';
+            ingredientImageMap[maNL] = imageUrl;
+          }
         }
+      }
+
+      // Inject ảnh vào recentOrders nếu còn thiếu
+      if (ingredientImageMap.isNotEmpty) {
+        recentOrders = recentOrders.map((order) {
+          final o = order as model.SellerOrderModel;
+          final updatedItems = o.chiTietDonHang.map((item) {
+            if (item.hinhAnh != null) return item;
+            final img = ingredientImageMap[item.maNguyenLieu];
+            if (img == null) return item;
+            return model.OrderDetailItem(
+              maNguyenLieu: item.maNguyenLieu,
+              maGianHang: item.maGianHang,
+              soLuong: item.soLuong,
+              giaCuoi: item.giaCuoi,
+              thanhTien: item.thanhTien,
+              maMonAn: item.maMonAn,
+              tenNguyenLieu: item.tenNguyenLieu,
+              donVi: item.donVi,
+              hinhAnh: img,
+            );
+          }).toList();
+          return model.SellerOrderModel(
+            maDonHang: o.maDonHang,
+            tongTien: o.tongTien,
+            tinhTrangDonHang: o.tinhTrangDonHang,
+            thoiGianGiaoHang: o.thoiGianGiaoHang,
+            diaChiGiaoHang: o.diaChiGiaoHang,
+            nguoiMua: o.nguoiMua,
+            thanhToan: o.thanhToan,
+            chiTietDonHang: updatedItems,
+          );
+        }).toList();
       }
 
       // 4. Lấy dữ liệu doanh thu 7 ngày gần đây để vẽ biểu đồ
@@ -191,6 +252,7 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         revenueChangePercentage = 100; // Tăng 100% nếu hôm qua không có doanh thu
       }
 
+      if (isClosed) return;
       emit(state.copyWith(
         isLoading: false,
         shopName: shopName,
@@ -208,10 +270,11 @@ class SellerHomeCubit extends Cubit<SellerHomeState> {
         ),
         weeklyRevenue: weeklyRevenue,
         lowStockProducts: lowStockProducts,
-        recentOrders: recentOrders.cast<model.SellerOrderModel>(),
+        recentOrders: recentOrders.whereType<model.SellerOrderModel>().toList(),
         revenueChangePercentage: revenueChangePercentage,
       ));
     } catch (e) {
+      if (isClosed) return;
       emit(state.copyWith(
         isLoading: false,
         errorMessage: 'Lỗi tải dữ liệu: $e',

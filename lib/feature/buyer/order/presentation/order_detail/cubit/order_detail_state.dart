@@ -76,3 +76,17 @@ class OrderDetailFailure extends OrderDetailState {
   @override
   List<Object?> get props => [errorMessage];
 }
+
+/// State yêu cầu hoàn tiền thành công
+class OrderDetailRefundSuccess extends OrderDetailState {
+  final String message;
+  final String orderId;
+
+  const OrderDetailRefundSuccess({
+    required this.message,
+    required this.orderId,
+  });
+
+  @override
+  List<Object?> get props => [message, orderId];
+}

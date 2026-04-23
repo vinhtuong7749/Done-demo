@@ -18,6 +18,7 @@ import '../services/search_service.dart';
 import '../services/search_history_service.dart';
 import '../services/cart_api_service.dart';
 import '../../feature/shop/presentation/shop_cubit.dart';
+import '../../feature/wallet/services/wallet_service.dart';
 import '../utils/app_logger.dart';
 
 /// Dependency Injection Container
@@ -136,6 +137,12 @@ Future<void> initDependencies() async {
     () => NavigationStateService(getIt<LocalStorageService>().prefs),
   );
   AppLogger.info('✅ NavigationStateService registered');
+
+  // Wallet API Service - Singleton
+  getIt.registerLazySingleton<WalletService>(
+    () => WalletService(),
+  );
+  AppLogger.info('✅ WalletService registered');
 
   // ==================== Repositories ====================
   // Register repositories here when created

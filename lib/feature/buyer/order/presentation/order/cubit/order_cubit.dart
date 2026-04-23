@@ -21,7 +21,6 @@ class OrderCubit extends Cubit<OrderState> {
   List<Order> _allOrders = [];
   OrderFilterType _currentFilter = OrderFilterType.all;
 
-  /// Tải danh sách đơn hàng từ API
   Future<void> loadOrders() async {
     if (AppConfig.enableApiLogging) {
       AppLogger.info('Loading orders from API');
@@ -30,8 +29,8 @@ class OrderCubit extends Cubit<OrderState> {
     emit(const OrderLoading());
 
     try {
-      // Gọi API để lấy danh sách đơn hàng
-      final response = await _orderService.getOrders(page: 1, limit: 20);
+      // Gọi API để lấy danh sách đơn hàng với limit lớn nhất được phép (áp dụng cho filter local ở máy khách)
+      final response = await _orderService.getOrders(page: 1, limit: 100);
 
       // Check if cubit is still open before continuing
       if (isClosed) return;
@@ -79,6 +78,7 @@ class OrderCubit extends Cubit<OrderState> {
       case 'dang_giao':
         return OrderStatusType.shipping;
       case 'da_giao':
+      case 'hoan_thanh':
         return OrderStatusType.delivered;
       case 'da_huy':
         return OrderStatusType.cancelled;

@@ -3,6 +3,7 @@ import '../../../feature/buyer/home/presentation/cubit/home_state.dart';
 import '../../router/app_router.dart';
 import '../../config/route_name.dart';
 import '../../services/cart_api_service.dart';
+import '../../../../feature/buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 
 /// Widget hiển thị món ăn chi tiết sau khi chọn menu
 class MenuDetailCard extends StatelessWidget {
@@ -41,10 +42,9 @@ class MenuDetailCard extends StatelessWidget {
         children: [
           // Hình ảnh món ăn
           GestureDetector(
-            onTap: () => AppRouter.navigateTo(
+            onTap: () => showMonAnIngredientBottomSheet(
               context,
-              RouteName.productDetail,
-              arguments: monAn.maMonAn,
+              monAn.maMonAn,
             ),
             child: ClipRRect(
               borderRadius: const BorderRadius.only(

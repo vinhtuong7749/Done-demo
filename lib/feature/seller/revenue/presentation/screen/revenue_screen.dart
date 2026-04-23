@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import '../../../../../core/widgets/buyer_loading.dart';
 import '../cubit/revenue_cubit.dart';
 import '../cubit/revenue_state.dart';
@@ -103,12 +103,15 @@ class SellerRevenueView extends StatelessWidget {
 
   Widget _buildFilterTabs(BuildContext context, SellerRevenueState state) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: const Color(0xFFE5E7EB),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
         children: [
           _buildTabItem(context, 'Ngày', DateFilter.today, state.selectedDateFilter),
           _buildTabItem(context, 'Tuần', DateFilter.week, state.selectedDateFilter),
@@ -123,38 +126,36 @@ class SellerRevenueView extends StatelessWidget {
   Widget _buildTabItem(
       BuildContext context, String label, DateFilter filter, DateFilter selected) {
     final isActive = filter == selected;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          if (filter == DateFilter.custom) {
-            _showDateRangePicker(context);
-          } else {
-            context.read<SellerRevenueCubit>().selectDateFilter(filter);
-          }
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    )
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? const Color(0xFFF97316) : const Color(0xFF6B7280),
-            ),
+    return GestureDetector(
+      onTap: () {
+        if (filter == DateFilter.custom) {
+          _showDateRangePicker(context);
+        } else {
+          context.read<SellerRevenueCubit>().selectDateFilter(filter);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+            color: isActive ? const Color(0xFFF97316) : const Color(0xFF6B7280),
           ),
         ),
       ),
@@ -183,7 +184,7 @@ class SellerRevenueView extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -191,18 +192,21 @@ class SellerRevenueView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.calendar_today, size: 18, color: Color(0xFF6B7280)),
+          const Icon(Icons.calendar_today, size: 22, color: Color(0xFF6B7280)),
           const SizedBox(width: 10),
-          Text(
-            dateRangeText,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF1F2937),
-              fontWeight: FontWeight.w500,
+          Flexible(
+            child: Text(
+              dateRangeText,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF1F2937),
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
-          const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF6B7280)),
+          const SizedBox(width: 8),
+          const Icon(Icons.keyboard_arrow_down, size: 24, color: Color(0xFF6B7280)),
         ],
       ),
     );
@@ -244,7 +248,7 @@ class SellerRevenueView extends StatelessWidget {
               const Text(
                 'TỔNG DOANH THU',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF166534),
                   letterSpacing: 1.2,
@@ -254,14 +258,14 @@ class SellerRevenueView extends StatelessWidget {
               Text(
                 '${_formatCurrency(state.paidBalance)}đ',
                 style: const TextStyle(
-                  fontSize: 32,
+                  fontSize: 40,
                   fontWeight: FontWeight.w900,
                   color: Color(0xFF14532D),
                 ),
               ),
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -269,21 +273,21 @@ class SellerRevenueView extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.trending_up, size: 16, color: Color(0xFF22C55E)),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.trending_up, size: 20, color: Color(0xFF22C55E)),
+                    const SizedBox(width: 8),
                     Text(
                       '${state.revenueChangePercentage.toStringAsFixed(0)}%',
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF22C55E),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     const Text(
                       'so với tháng trước',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Color(0xFF6B7280),
                       ),
                     ),
@@ -299,13 +303,13 @@ class SellerRevenueView extends StatelessWidget {
 
   Widget _buildTrendChart(SellerRevenueState state) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -320,7 +324,7 @@ class SellerRevenueView extends StatelessWidget {
               const Text(
                 'Biểu đồ xu hướng',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1F2937),
                 ),
@@ -333,36 +337,36 @@ class SellerRevenueView extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 200,
-            width: double.infinity,
-            child: state.dailyRevenue.isEmpty
-                ? const Center(child: Text('Không có dữ liệu'))
-                : CustomPaint(
-                    painter: AreaChartPainter(state.dailyRevenue),
-                  ),
-          ),
-          const SizedBox(height: 12),
-          // X-axis labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildChartLabel('T1'),
-              _buildChartLabel('T2'),
-              _buildChartLabel('T3'),
-              _buildChartLabel('T4'),
-            ],
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Tính toán độ rộng cần thiết. Mỗi điểm dữ liệu cần khoảng 50px
+              final double minWidth = constraints.maxWidth;
+              final double dataWidth = state.dailyRevenue.length * 60.0;
+              final double chartWidth = dataWidth > minWidth ? dataWidth : minWidth;
+
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: SizedBox(
+                  height: 220,
+                  width: chartWidth,
+                  child: state.dailyRevenue.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'Chưa có dữ liệu giao dịch',
+                            style: TextStyle(color: Colors.grey, fontSize: 16),
+                          ),
+                        )
+                      : CustomPaint(
+                          painter: AreaChartPainter(state.dailyRevenue),
+                        ),
+                ),
+              );
+            },
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildChartLabel(String label) {
-    return Text(
-      label,
-      style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
     );
   }
 
@@ -392,7 +396,7 @@ class SellerRevenueView extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF9CA3AF),
                 letterSpacing: 0.5,
@@ -402,7 +406,7 @@ class SellerRevenueView extends StatelessWidget {
             Text(
               value,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFF1F2937),
               ),
@@ -423,7 +427,7 @@ class SellerRevenueView extends StatelessWidget {
             const Text(
               'Sản phẩm bán chạy',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1F2937),
               ),
@@ -432,7 +436,7 @@ class SellerRevenueView extends StatelessWidget {
               onPressed: () {},
               child: const Text(
                 'Tất cả',
-                style: TextStyle(color: Color(0xFFF97316), fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFFF97316), fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ),
           ],
@@ -460,53 +464,53 @@ class SellerRevenueView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              product.imageUrl,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 60,
-                height: 60,
-                color: const Color(0xFFF3F4F6),
-                child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF)),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                product.imageUrl,
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 80,
+                  height: 80,
+                  color: const Color(0xFFF3F4F6),
+                  child: const Icon(Icons.image_outlined, color: Color(0xFF9CA3AF), size: 32),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${product.orderCount} đơn hàng',
+                    style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  product.name,
+                  '${(product.totalAmount / 1000000).toStringAsFixed(1)}M',
                   style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
                     color: Color(0xFF1F2937),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${product.orderCount} đơn hàng',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${(product.totalAmount / 1000000).toStringAsFixed(1)}M',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -573,60 +577,133 @@ class AreaChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final List<double> values = data.isEmpty
-        ? [0.3, 0.6, 0.4, 0.8, 0.5, 0.9, 0.7] // Mock trend
-        : data.values.toList();
+    if (data.isEmpty) return;
     
-    if (values.isEmpty) return;
+    final keys = data.keys.toList();
+    final values = data.values.toList();
 
-    final paint = Paint()
-      ..color = const Color(0xFFF97316)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final fillPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFFFB923C).withOpacity(0.3),
-          const Color(0xFFFB923C).withOpacity(0.0),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-
-    final path = Path();
-    final fillPath = Path();
-
+    // Padding trên cùng để vẽ giá trị tiền, padding dưới để vẽ ngày tháng
+    final topPadding = 30.0;
+    final bottomPadding = 25.0;
+    final chartHeight = size.height - topPadding - bottomPadding;
+    
     final maxValue = values.reduce((a, b) => a > b ? a : b);
-    final widthStep = size.width / (values.length > 1 ? values.length - 1 : 1);
+    final widthStep = values.length > 1 ? size.width / (values.length - 1) : size.width / 2;
 
+    List<Offset> points = [];
+
+    // Tính toán tọa độ điểm
     for (var i = 0; i < values.length; i++) {
-      final x = i * widthStep;
-      final normalizedValue = maxValue > 0 ? (values[i] / maxValue) : values[i];
-      final y = size.height - (normalizedValue * size.height * 0.8);
-
-      if (i == 0) {
-        path.moveTo(x, y);
-        fillPath.moveTo(x, size.height);
-        fillPath.lineTo(x, y);
-      } else {
-        final prevX = (i - 1) * widthStep;
-        final prevY = size.height - (maxValue > 0 ? (values[i-1] / maxValue) * size.height * 0.8 : values[i-1] * size.height * 0.8);
-        
-        path.cubicTo((prevX + x) / 2, prevY, (prevX + x) / 2, y, x, y);
-        fillPath.cubicTo((prevX + x) / 2, prevY, (prevX + x) / 2, y, x, y);
-      }
-
-      if (i == values.length - 1) {
-        fillPath.lineTo(x, size.height);
-        fillPath.close();
-      }
+      final x = values.length > 1 ? i * widthStep : size.width / 2;
+      final normalizedValue = maxValue > 0 ? (values[i] / maxValue) : 0.0;
+      final y = topPadding + chartHeight - (normalizedValue * chartHeight);
+      points.add(Offset(x, y));
     }
 
-    canvas.drawPath(fillPath, fillPaint);
-    canvas.drawPath(path, paint);
+    // Vẽ bóng gradient
+    if (points.length > 1) {
+      final fillPath = Path();
+      fillPath.moveTo(points.first.dx, size.height - bottomPadding);
+      for (var p in points) {
+        fillPath.lineTo(p.dx, p.dy);
+      }
+      fillPath.lineTo(points.last.dx, size.height - bottomPadding);
+      fillPath.close();
+
+      final fillPaint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            const Color(0xFFFB923C).withValues(alpha: 0.4),
+            const Color(0xFFFB923C).withValues(alpha: 0.0),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+      
+      canvas.drawPath(fillPath, fillPaint);
+    }
+
+    // Vẽ đường biểu đồ
+    if (points.length > 1) {
+      final path = Path();
+      path.moveTo(points.first.dx, points.first.dy);
+      for (int i = 1; i < points.length; i++) {
+        path.lineTo(points[i].dx, points[i].dy);
+      }
+      final paint = Paint()
+        ..color = const Color(0xFFF97316)
+        ..strokeWidth = 3
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round;
+        
+      canvas.drawPath(path, paint);
+    }
+
+    // Vẽ điểm tròn và Text
+    final pointPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    
+    final pointBorderPaint = Paint()
+      ..color = const Color(0xFFF97316)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    for (var i = 0; i < points.length; i++) {
+      final point = points[i];
+      
+      // Vẽ vòng tròn
+      canvas.drawCircle(point, 5, pointPaint);
+      canvas.drawCircle(point, 5, pointBorderPaint);
+
+      // Vẽ giá trị (Doanh thu) ngay trên điểm
+      final value = values[i];
+      final textValue = value >= 1000000 
+          ? '${(value / 1000000).toStringAsFixed(1)}M'
+          : '${(value / 1000).toStringAsFixed(0)}k';
+          
+      final valuePainter = TextPainter(
+        text: TextSpan(
+          text: textValue,
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      valuePainter.layout();
+      valuePainter.paint(
+        canvas, 
+        Offset(point.dx - valuePainter.width / 2, point.dy - 22)
+      );
+
+      // Vẽ Ngày Tháng ở trục X
+      String dateStr = keys[i];
+      try {
+        final date = DateTime.parse(dateStr);
+        dateStr = '${date.day}/${date.month}'; // Format DD/MM
+      } catch (_) {}
+
+      final datePainter = TextPainter(
+        text: TextSpan(
+          text: dateStr,
+          style: const TextStyle(
+            color: Color(0xFF6B7280),
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      datePainter.layout();
+      datePainter.paint(
+        canvas, 
+        Offset(point.dx - datePainter.width / 2, size.height - datePainter.height)
+      );
+    }
   }
 
   @override

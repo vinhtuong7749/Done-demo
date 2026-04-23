@@ -133,12 +133,14 @@ class SignUpCubit extends Cubit<SignUpState> {
   /// - username: Tên đăng nhập (email)
   /// - password: Mật khẩu
   /// - fullName: Tên đầy đủ của người dùng
+  /// - phone: Số điện thoại
   /// - role: Vai trò (mặc định: 'nguoi_mua')
   Future<bool> signUp({
     required String username,
     required String password,
     required String confirmPassword,
     required String fullName,
+    String phone = '',
     String? role,
   }) async {
     final finalRole = role ?? _selectedRole;
@@ -169,6 +171,7 @@ class SignUpCubit extends Cubit<SignUpState> {
         password: password,
         fullName: fullName,
         role: finalRole,
+        sdt: phone.isNotEmpty ? phone : '0000000000',
       );
 
       // Check if cubit is still open before emitting success

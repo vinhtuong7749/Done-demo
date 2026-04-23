@@ -106,7 +106,7 @@ class SellerRevenueCubit extends Cubit<SellerRevenueState> {
         final orderCount = filteredOrders.length;
         final averageOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0.0;
         
-        // Calculate Best Selling Products
+        // Step 1: Build product stats from order data
         final Map<String, _ProductStats> productStatsMap = {};
         for (var order in filteredOrders) {
           for (var item in order.chiTietDonHang) {
@@ -115,21 +115,52 @@ class SellerRevenueCubit extends Cubit<SellerRevenueState> {
               name: item.tenNguyenLieu,
               totalAmount: 0,
               orderCount: 0,
-              imageUrl: item.hinhAnh,
+              imageUrl: null, // Orders API does NOT return images
             ));
             stats.totalAmount += item.thanhTien;
             stats.orderCount += item.soLuong;
-            // Update image if we find a better one (though they should be similar)
-            if (stats.imageUrl == null && item.hinhAnh != null) {
-              stats.imageUrl = item.hinhAnh;
-            }
           }
         }
+        print('📊 [REVENUE] Product stats built: ${productStatsMap.keys.toList()}');
 
+        // Step 2: Fetch catalog images from seller products API
+        Map<String, String> catalogImages = {};
+        try {
+          final prodResponse = await NhomNguyenLieuService.getSellerProducts(limit: 100);
+          print('📊 [REVENUE] Catalog fetched: ${prodResponse.data.length} products');
+          for (var p in prodResponse.data) {
+            final ma = (p['ma_nguyen_lieu'] ?? '').toString();
+            final img = (p['hinh_anh'] ?? '').toString();
+            if (ma.isNotEmpty && img.isNotEmpty && img != 'null') {
+              catalogImages[ma] = img;
+            }
+          }
+          print('📊 [REVENUE] Catalog images mapped: ${catalogImages.length} entries');
+        } catch (e) {
+          print('⚠️ [REVENUE] Catalog fetch failed: $e');
+        }
+
+        // Step 3: Build best selling products with image resolution
+        // Priority: catalog image > constructed URL > placeholder
+        const imageServerBase = 'http://207.180.233.84/uploads/ingredients';
+        
         final bestSellingProducts = productStatsMap.entries.map((e) {
+          final productId = e.key;
+          String finalImg;
+          
+          // Try catalog image first
+          if (catalogImages.containsKey(productId) && catalogImages[productId]!.isNotEmpty) {
+            finalImg = catalogImages[productId]!;
+          } else {
+            // Construct URL from known pattern: http://207.180.233.84/uploads/ingredients/{id}.jpg
+            finalImg = '$imageServerBase/$productId.jpg';
+          }
+          
+          print('📊 [REVENUE] Product "$productId" (${e.value.name}) → image: $finalImg');
+
           return BestSellingProduct(
             name: e.value.name,
-            imageUrl: e.value.imageUrl ?? 'https://cdn-icons-png.flaticon.com/512/3081/3081840.png',
+            imageUrl: finalImg,
             orderCount: e.value.orderCount,
             totalAmount: e.value.totalAmount,
             changePercentage: 0,

@@ -8,6 +8,7 @@ import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
 import '../cubit/product_cubit.dart';
 import '../cubit/product_state.dart';
+import '../../../../buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 
 class ProductScreen extends StatelessWidget {
   const ProductScreen({super.key});
@@ -234,7 +235,7 @@ class _ProductViewState extends State<ProductView> {
       builder: (context, state) {
         if (state is ProductLoaded && state.categories.isNotEmpty) {
           return Container(
-            height: 35,
+            height: 44, // Tăng chiều cao để chứa shadow và padding tốt hơn
             margin: const EdgeInsets.only(left: 25),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -255,31 +256,48 @@ class _ProductViewState extends State<ProductView> {
                       },
                     );
                   },
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 16),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.only(right: 12, bottom: 4),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
+                      horizontal: 20,
+                      vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      border: isSelected
-                          ? Border.all(color: const Color(0xFF008EDB))
-                          : null,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      category.tenDanhMucMonAn,
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: 12,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        letterSpacing: 0.5,
+                      color: isSelected
+                          ? const Color(0xFF00B40F) // Màu xanh lá chủ đạo
+                          : Colors.white,
+                      border: Border.all(
                         color: isSelected
-                            ? const Color(0xFF008EDB)
-                            : const Color(0xFF000000),
-                        height: 1.33,
+                            ? const Color(0xFF00B40F)
+                            : const Color(0xFFE5E7EB), // Viền xám nhạt khi không chọn
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(24), // Bo tròn dạng viên thuốc (Pill shape)
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF00B40F).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Center(
+                      child: Text(
+                        category.tenDanhMucMonAn,
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 14, // Tăng size chữ
+                          fontWeight: isSelected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                          letterSpacing: 0.3,
+                          color: isSelected
+                              ? Colors.white
+                              : const Color(0xFF4B5563), // Chữ xám đậm
+                        ),
                       ),
                     ),
                   ),
@@ -372,10 +390,9 @@ class _ProductViewState extends State<ProductView> {
                   difficulty: monAnWithImage.difficulty,
                   cookTime: monAnWithImage.cookTime,
                   onViewDetail: () {
-                    AppRouter.navigateTo(
+                    showMonAnIngredientBottomSheet(
                       context,
-                      RouteName.productDetail,
-                      arguments: monAn.maMonAn,
+                      monAn.maMonAn,
                     );
                   },
                 );

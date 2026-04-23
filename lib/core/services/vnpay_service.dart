@@ -186,15 +186,16 @@ class OrderStatusResponse {
   });
 
   factory OrderStatusResponse.fromJson(Map<String, dynamic> json) {
-    // Xử lý cả trường hợp response có nested "order" object hoặc flat
-    final orderData = json['order'] as Map<String, dynamic>? ?? json;
+    // Xử lý cả trường hợp response có nested "data" hoặc "order" object hoặc flat
+    final data = json['data'] ?? json['order'] ?? json;
     
     return OrderStatusResponse(
-      success: json['success'] ?? true,
-      maDonHang: orderData['ma_don_hang'] ?? json['ma_don_hang'] ?? '',
-      trangThai: orderData['trang_thai'] ?? json['trang_thai'] ?? '',
-      message: json['message'],
-      tongTien: (orderData['tong_tien'] as num?)?.toDouble() ?? 
+      success: json['success'] ?? true, // Backend thường không check success trong object này
+      maDonHang: data['ma_don_hang'] ?? '',
+      // Map đúng key tinh_trang_don_hang thay vì trang_thai
+      trangThai: data['tinh_trang_don_hang'] ?? data['thanh_toan'] ?? data['trang_thai_thanh_toan'] ?? data['trang_thai'] ?? '',
+      message: json['message'] ?? '',
+      tongTien: (data['tong_tien'] as num?)?.toDouble() ?? 
                (json['tong_tien'] as num?)?.toDouble(),
     );
   }

@@ -279,7 +279,7 @@ class _IngredientViewState extends State<_IngredientView> {
         
         // Horizontal Category List
         SizedBox(
-          height: 50,
+          height: 55,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -426,7 +426,7 @@ class _IngredientViewState extends State<_IngredientView> {
       hasDiscount: product.hasDiscount,
       originalPrice: product.originalPrice,
       onAddToCart: navigateToDetail, // Navigate để chọn gian hàng trước khi thêm
-      onBuyNow: navigateToDetail, // Navigate để chọn gian hàng trước khi mua
+      onBuyNow: () => context.read<IngredientCubit>().buyNow(context, product), // Chuyển thẳng đến thanh toán
       onTap: navigateToDetail,
     );
   }

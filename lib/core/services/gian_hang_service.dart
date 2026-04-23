@@ -160,4 +160,24 @@ class GianHangService {
       rethrow;
     }
   }
+
+  /// Kiểm tra người bán có gian hàng chưa
+  /// API: GET /api/seller/stall/info
+  Future<bool> checkSellerHasStall() async {
+    try {
+      final user = await _authService.getCurrentUser();
+      
+      if (AppConfig.enableApiLogging) {
+        AppLogger.info('🏪 [STALL CHECK] User role: ${user.vaiTro}, stall_id: ${user.stallId}, approval: ${user.approvalStatus}');
+      }
+
+      // Đã duyệt (1) và có stallId
+      return user.approvalStatus == 1 && user.stallId != null && user.stallId!.isNotEmpty;
+    } catch (e) {
+      if (AppConfig.enableApiLogging) {
+        AppLogger.error('❌ [STALL CHECK] Error: $e');
+      }
+      return true; // Mặc định cho vào để tránh chặn sai ứng dụng trong trường hợp lỗi mạng
+    }
+  }
 }

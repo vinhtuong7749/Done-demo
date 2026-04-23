@@ -9,6 +9,7 @@ import 'menu_selection_card.dart';
 import 'menu_detail_card.dart';
 import '../../router/app_router.dart';
 import '../../config/route_name.dart';
+import '../../../feature/buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 import '../../config/app_config.dart';
 import '../../utils/app_logger.dart';
 import '../../models/chat_ai_model.dart' as chat_model;
@@ -179,10 +180,9 @@ class ChatMessageWidget extends StatelessWidget {
                           final monAn = message.monAnSuggestions![index];
                           return MonAnSuggestionCard(
                             monAn: monAn,
-                            onTap: () => AppRouter.navigateTo(
+                            onTap: () => showMonAnIngredientBottomSheet(
                               context,
-                              RouteName.productDetail,
-                              arguments: monAn.maMonAn,
+                              monAn.maMonAn,
                             ),
                           );
                         },

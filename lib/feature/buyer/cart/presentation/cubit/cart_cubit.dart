@@ -121,10 +121,20 @@ class CartCubit extends Cubit<CartState> {
     if (newQuantity <= 0) { await removeItem(itemId); return; }
     if (AppConfig.enableApiLogging) AppLogger.info('🔢 [CART] Cập nhật số lượng item $itemId: $newQuantity');
 
+    // Lưu state cũ để phòng khi lỗi gọi API
+    final oldItems = List<CartItem>.from(_cartItems);
+
     try {
-      emit(CartUpdating());
-      
-      final item = _cartItems.firstWhere((i) => i.id == itemId);
+      // Optimistic update: Cập nhật ngay trên UI và emit CartLoaded luôn để trải nghiệm mượt mà, không gián đoạn
+      _cartItems = _cartItems.map((item) {
+        if (item.id == itemId) return item.copyWith(quantity: newQuantity);
+        return item;
+      }).toList();
+
+      emit(CartLoaded(items: _cartItems, totalAmount: _calculateTotalAmount(), selectedItemIds: _selectedItemIds));
+
+      // Gọi backend để cập nhật (chạy ngầm)
+      final item = oldItems.firstWhere((i) => i.id == itemId);
       final cartApiService = CartApiService();
       
       await cartApiService.updateCartItem(
@@ -134,14 +144,11 @@ class CartCubit extends Cubit<CartState> {
         quantity: newQuantity,
       );
 
-      _cartItems = _cartItems.map((item) {
-        if (item.id == itemId) return item.copyWith(quantity: newQuantity);
-        return item;
-      }).toList();
-
-      emit(CartLoaded(items: _cartItems, totalAmount: _calculateTotalAmount(), selectedItemIds: _selectedItemIds));
     } catch (e) {
       if (AppConfig.enableApiLogging) AppLogger.error('❌ [CART] Lỗi khi cập nhật số lượng: ${e.toString()}');
+      // Rollback nếu thất bại
+      _cartItems = oldItems;
+      emit(CartLoaded(items: _cartItems, totalAmount: _calculateTotalAmount(), selectedItemIds: _selectedItemIds));
       emit(CartFailure(errorMessage: 'Không thể cập nhật số lượng: ${e.toString()}'));
     }
   }

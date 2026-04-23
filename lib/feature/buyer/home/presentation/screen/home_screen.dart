@@ -29,6 +29,8 @@ class _HomeView extends StatefulWidget {
 class _HomeViewState extends State<_HomeView> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  
+  Offset _position = const Offset(22, 22);
 
   @override
   bool get wantKeepAlive => true;
@@ -48,24 +50,47 @@ class _HomeViewState extends State<_HomeView> with AutomaticKeepAliveClientMixin
       backgroundColor: Colors.white,
       body: BlocBuilder<HomeCubit, HomeState>(
         builder: (context, state) {
-          return _buildChatContent(context, state);
+          return SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Positioned(
+                      left: _position.dx,
+                      top: _position.dy,
+                      child: GestureDetector(
+                        onPanUpdate: (details) {
+                          setState(() {
+                            _position += details.delta;
+                          });
+                        },
+                        child: SizedBox(
+                          width: constraints.maxWidth - 44,
+                          height: constraints.maxHeight - 44,
+                          child: _buildChatContent(context, state),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          );
         },
       ),
     );
   }
 
   Widget _buildChatContent(BuildContext context, HomeState state) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0x80DCF9E4),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFF0272BA)),
-          ),
-          child: Column(
-            children: [
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0x80DCF9E4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF0272BA)),
+      ),
+      child: Column(
+        children: [
               // Header chào buổi sáng trong khung chat
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -132,8 +157,6 @@ class _HomeViewState extends State<_HomeView> with AutomaticKeepAliveClientMixin
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 

@@ -151,4 +151,42 @@ class OrderDetailCubit extends Cubit<OrderDetailState> {
       }
     }
   }
+
+  /// Yêu cầu hoàn tiền
+  Future<void> requestRefund(String orderId, List<RefundItem> items) async {
+    if (AppConfig.enableApiLogging) {
+      AppLogger.info('Requesting refund for order: $orderId');
+    }
+
+    emit(const OrderDetailProcessing());
+
+    try {
+      final request = RefundRequest(orderId: orderId, items: items);
+      await _orderService.refundOrder(request);
+
+      if (isClosed) return;
+
+      if (AppConfig.enableApiLogging) {
+        AppLogger.info('Refund requested successfully for $orderId');
+      }
+
+      emit(OrderDetailRefundSuccess(
+        message: 'Yêu cầu hoàn tiền thành công',
+        orderId: orderId,
+      ));
+
+      // Reload order detail
+      await loadOrderDetail(orderId);
+    } catch (e) {
+      if (AppConfig.enableApiLogging) {
+        AppLogger.error('Failed to request refund: $e');
+      }
+
+      if (!isClosed) {
+        emit(OrderDetailFailure(
+          errorMessage: e.toString().replaceAll('Exception: ', ''),
+        ));
+      }
+    }
+  }
 }

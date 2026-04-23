@@ -17,6 +17,7 @@ class SellerInfo extends Equatable {
   final double rating;
   final int productCount;
   final int soldCount;
+  final String? walletId;
   
   String get categoriesDisplay => categories.join(', ');
 
@@ -34,9 +35,16 @@ class SellerInfo extends Equatable {
     this.rating = 5.0,
     this.productCount = 0,
     this.soldCount = 0,
+    this.walletId,
   });
 
-  factory SellerInfo.fromUserProfile(UserProfileData profile, {int productCount = 0, int soldCount = 0}) {
+  factory SellerInfo.fromUserProfile(
+    UserProfileData profile, {
+    int productCount = 0,
+    int soldCount = 0,
+    double rating = 5.0,
+    String? avatarUrl,
+  }) {
     return SellerInfo(
       id: profile.maNguoiDung,
       fullName: profile.tenNguoiDung,
@@ -46,11 +54,12 @@ class SellerInfo extends Equatable {
       accountNumber: profile.soTaiKhoan ?? 'Chưa cập nhật',
       marketName: 'Chưa cập nhật',
       stallNumber: 'Chưa cập nhật',
-      categories: const ['Gia vị', 'Thịt heo'],
-      avatarUrl: 'assets/img/seller_home_avatar.png',
-      rating: 5.0,
+      categories: const ['Gia vị', 'Thịt heo'], // Categories API chưa support nên để tĩnh tạm
+      avatarUrl: avatarUrl ?? 'assets/img/seller_home_avatar.png',
+      rating: rating,
       productCount: productCount,
       soldCount: soldCount,
+      walletId: profile.walletId,
     );
   }
 
@@ -68,6 +77,7 @@ class SellerInfo extends Equatable {
     double? rating,
     int? productCount,
     int? soldCount,
+    String? walletId,
   }) {
     return SellerInfo(
       id: id ?? this.id,
@@ -83,6 +93,7 @@ class SellerInfo extends Equatable {
       rating: rating ?? this.rating,
       productCount: productCount ?? this.productCount,
       soldCount: soldCount ?? this.soldCount,
+      walletId: walletId ?? this.walletId,
     );
   }
 
@@ -101,6 +112,7 @@ class SellerInfo extends Equatable {
         rating,
         productCount,
         soldCount,
+        walletId,
       ];
 }
 

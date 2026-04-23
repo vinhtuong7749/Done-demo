@@ -11,7 +11,24 @@ class ChatHubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tin nhắn')),
+      backgroundColor: const Color(0xFFF5F9F6), // Stitch Mint background
+      appBar: AppBar(
+        title: const Text(
+          'Tin nhắn',
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            color: Color(0xFF1B5E20), // Forest Green
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 2,
+        shadowColor: Colors.black.withValues(alpha: 0.1),
+        iconTheme: const IconThemeData(color: Color(0xFF1B5E20)),
+        centerTitle: true,
+      ),
       body: const _BuyerSellerTab(),
     );
   }
@@ -53,8 +70,9 @@ class _BuyerSellerTab extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: () => context.read<ChatInboxCubit>().loadConversations(),
             child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 16),
               itemCount: state.conversations.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final conversation = state.conversations[index];
                 final title = conversation.getDisplayName(state.role);
@@ -74,73 +92,108 @@ class _BuyerSellerTab extends StatelessWidget {
                     ? 'Bạn: ${conversation.tinNhanCuoi}'
                     : conversation.tinNhanCuoi!;
 
-                return ListTile(
-                  tileColor: conversation.unread > 0
-                      ? const Color(0xFFF5F5F5)
-                      : Colors.white,
-                  leading: CircleAvatar(
-                    child: Text(
-                      title.isNotEmpty ? title[0].toUpperCase() : '?',
-                    ),
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  title: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: conversation.unread > 0
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    leading: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE2F5E5), // Light green background
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        title.isNotEmpty ? title[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                          color: Color(0xFF1B5E20), // Forest Green
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    previewText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: conversation.unread > 0
-                          ? FontWeight.w500
-                          : FontWeight.normal,
-                      color: conversation.unread > 0
-                          ? Colors.black87
-                          : Colors.grey,
+                    title: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 16,
+                        color: const Color(0xFF1B5E20),
+                        fontWeight: conversation.unread > 0
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  trailing: conversation.unread > 0
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${conversation.unread}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        previewText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 14,
+                          fontWeight: conversation.unread > 0
+                              ? FontWeight.w500
+                              : FontWeight.normal,
+                          color: conversation.unread > 0
+                              ? const Color(0xFF1C1C1E) // Dark black
+                              : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                    trailing: conversation.unread > 0
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
                             ),
-                          ),
-                        )
-                      : const Icon(Icons.chevron_right),
-                  onTap: () async {
-                    final cubit = context.read<ChatInboxCubit>();
-                    cubit.markConversationAsRead(conversation.conversationId);
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935), // Alert Red
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${conversation.unread}',
+                              style: const TextStyle(
+                                fontFamily: 'Roboto',
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.chevron_right, color: Color(0xFF8E8E93)),
+                    onTap: () async {
+                      final cubit = context.read<ChatInboxCubit>();
+                      cubit.markConversationAsRead(conversation.conversationId);
 
-                    await Navigator.pushNamed(
-                      context,
-                      RouteName.chatRoom,
-                      arguments: {
-                        'conversationId': conversation.conversationId,
-                        'title': title,
-                      },
-                    );
+                      await Navigator.pushNamed(
+                        context,
+                        RouteName.chatRoom,
+                        arguments: {
+                          'conversationId': conversation.conversationId,
+                          'title': title,
+                        },
+                      );
 
-                    if (!context.mounted) return;
-                    await cubit.loadConversations();
-                  },
+                      if (!context.mounted) return;
+                      await cubit.loadConversations();
+                    },
+                  ),
                 );
               },
             ),

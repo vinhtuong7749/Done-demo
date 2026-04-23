@@ -8,6 +8,7 @@ import '../../../../../core/config/route_name.dart';
 import '../../../../../core/router/app_router.dart';
 import '../cubit/category_product_cubit.dart';
 import '../cubit/category_product_state.dart';
+import '../../../../buyer/productdetail/presentation/widget/mon_an_ingredient_bottom_sheet.dart';
 
 /// Screen hiển thị danh sách món ăn theo danh mục
 class CategoryProductScreen extends StatelessWidget {
@@ -197,10 +198,9 @@ class _CategoryProductViewState extends State<CategoryProductView> {
                   difficulty: monAnWithImage.difficulty,
                   cookTime: monAnWithImage.cookTime,
                   onViewDetail: () {
-                    AppRouter.navigateTo(
+                    showMonAnIngredientBottomSheet(
                       context,
-                      RouteName.productDetail,
-                      arguments: monAn.maMonAn,
+                      monAn.maMonAn,
                     );
                   },
                 );

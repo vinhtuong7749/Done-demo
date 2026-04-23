@@ -37,10 +37,10 @@ class _CartViewState extends State<CartView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: const Color(0xFF00B40F),
+              backgroundColor: const Color(0xFF26CD3A),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           );
@@ -48,10 +48,10 @@ class _CartViewState extends State<CartView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.message),
-              backgroundColor: const Color(0xFF00B40F),
+              backgroundColor: const Color(0xFF26CD3A),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           );
@@ -59,17 +59,17 @@ class _CartViewState extends State<CartView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage),
-              backgroundColor: const Color(0xFFFF3B30),
+              backgroundColor: const Color(0xFFE53935),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
           );
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF5F5F5),
+        backgroundColor: const Color(0xFFF5F9F6),
         body: SafeArea(
           child: Stack(
             children: [
@@ -158,37 +158,7 @@ class _CartViewState extends State<CartView> {
             ],
           ),
           
-          // Order ID row
-          BlocBuilder<CartCubit, CartState>(
-            builder: (context, state) {
-              if (state is CartLoaded && state.orderCode != null && state.orderCode!.isNotEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.receipt_long,
-                        size: 16,
-                        color: Color(0xFF8E8E93),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Mã đơn: ${state.orderCode}',
-                        style: const TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          // Order ID row has been removed.
           
           const SizedBox(height: 12),
           
@@ -211,13 +181,13 @@ class _CartViewState extends State<CartView> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+                color: const Color(0xFF26CD3A).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.shopping_cart_outlined,
                 size: 60,
-                color: Color(0xFF00B40F),
+                color: Color(0xFF26CD3A),
               ),
             ),
             const SizedBox(height: 24),
@@ -227,7 +197,7 @@ class _CartViewState extends State<CartView> {
                 fontFamily: 'Roboto',
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF1C1C1E),
+                color: Color(0xFF1B5E20), // Trầm Forest Green
               ),
             ),
             const SizedBox(height: 8),
@@ -245,11 +215,11 @@ class _CartViewState extends State<CartView> {
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00B40F),
+                backgroundColor: const Color(0xFF26CD3A),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 0,
               ),
@@ -371,13 +341,13 @@ class _CartViewState extends State<CartView> {
     
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.getCardBackground(),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -388,9 +358,9 @@ class _CartViewState extends State<CartView> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF00B40F).withValues(alpha: 0.1),
+              color: const Color(0xFF26CD3A).withValues(alpha: 0.1),
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
+                top: Radius.circular(16),
               ),
             ),
             child: Row(
@@ -416,14 +386,14 @@ class _CartViewState extends State<CartView> {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: allShopItemsSelected 
-                            ? const Color(0xFF00B40F) 
+                            ? const Color(0xFF26CD3A) 
                             : someShopItemsSelected
-                                ? const Color(0xFF00B40F).withValues(alpha: 0.5)
+                                ? const Color(0xFF26CD3A).withValues(alpha: 0.5)
                                 : const Color(0xFFE0E0E0),
                         width: 2,
                       ),
                       color: allShopItemsSelected 
-                          ? const Color(0xFF00B40F) 
+                          ? const Color(0xFF26CD3A) 
                           : Colors.white,
                     ),
                     child: allShopItemsSelected
@@ -436,7 +406,7 @@ class _CartViewState extends State<CartView> {
                             ? Container(
                                 margin: const EdgeInsets.all(6),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFF00B40F),
+                                  color: Color(0xFF26CD3A),
                                   shape: BoxShape.circle,
                                 ),
                               )
@@ -445,9 +415,9 @@ class _CartViewState extends State<CartView> {
                 ),
                 const SizedBox(width: 12),
                 const Icon(
-                  Icons.store,
+                  Icons.store_mall_directory_outlined,
                   size: 20,
-                  color: Color(0xFF00B40F),
+                  color: Color(0xFF1B5E20), // Deep Forest Green for icon
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -457,7 +427,7 @@ class _CartViewState extends State<CartView> {
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
-                      color: Color(0xFF1C1C1E),
+                      color: Color(0xFF1B5E20), // Deep Forest Green for text
                     ),
                   ),
                 ),
@@ -480,7 +450,7 @@ class _CartViewState extends State<CartView> {
                 if (index < items.length - 1)
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Divider(height: 1, thickness: 1),
+                    child: Divider(height: 1, thickness: 1, color: Color(0xFFF0F0F0)),
                   ),
               ],
             );
@@ -497,7 +467,7 @@ class _CartViewState extends State<CartView> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Checkbox
           GestureDetector(
@@ -509,12 +479,12 @@ class _CartViewState extends State<CartView> {
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: item.isSelected 
-                      ? const Color(0xFF00B40F) 
+                      ? const Color(0xFF26CD3A) 
                       : const Color(0xFFE0E0E0),
                   width: 2,
                 ),
                 color: item.isSelected 
-                    ? const Color(0xFF00B40F) 
+                    ? const Color(0xFF26CD3A) 
                     : Colors.white,
               ),
               child: item.isSelected
@@ -530,10 +500,10 @@ class _CartViewState extends State<CartView> {
           
           // Product image
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             child: _buildProductImage(item.productImage),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           
           // Product info
           Expanded(
@@ -544,16 +514,14 @@ class _CartViewState extends State<CartView> {
                   item.productName,
                   style: const TextStyle(
                     fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Color(0xFF1C1C1E),
+                    color: Color(0xFF1B5E20),
                     height: 1.4,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                _buildQuantityControl(context, cubit, item),
                 const SizedBox(height: 8),
                 Text(
                   PriceFormatter.formatPrice(item.price),
@@ -561,27 +529,33 @@ class _CartViewState extends State<CartView> {
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
-                    color: Color(0xFFFF3B30),
+                    color: Color(0xFFE53935), // Alert Red for price pop
                   ),
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                     _buildQuantityControl(context, cubit, item),
+                     // Delete button
+                    GestureDetector(
+                      onTap: () => cubit.removeItem(item.id),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE53935).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: Color(0xFFE53935),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ),
-          ),
-          
-          // Delete button
-          GestureDetector(
-            onTap: () => cubit.removeItem(item.id),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.delete_outline,
-                size: 20,
-                color: Color(0xFFFF3B30),
-              ),
             ),
           ),
         ],
@@ -592,35 +566,44 @@ class _CartViewState extends State<CartView> {
   Widget _buildQuantityControl(BuildContext context, CartCubit cubit, CartItem item) {
     final isDecrementDisabled = item.quantity <= 1;
 
-    return Row(
-      children: [
-        _buildQtyButton(
-          icon: Icons.remove,
-          enabled: !isDecrementDisabled,
-          onTap: () {
-            if (!isDecrementDisabled) {
-              cubit.updateQuantity(item.id, item.quantity - 1);
-            }
-          },
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            '${item.quantity}',
-            style: const TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1C1C1E),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F9F6),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildQtyButton(
+            icon: Icons.remove,
+            enabled: !isDecrementDisabled,
+            onTap: () {
+              if (!isDecrementDisabled) {
+                cubit.updateQuantity(item.id, item.quantity - 1);
+              }
+            },
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              '${item.quantity}',
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1B5E20),
+              ),
             ),
           ),
-        ),
-        _buildQtyButton(
-          icon: Icons.add,
-          enabled: true,
-          onTap: () => cubit.updateQuantity(item.id, item.quantity + 1),
-        ),
-      ],
+          _buildQtyButton(
+            icon: Icons.add,
+            enabled: true,
+            onTap: () => cubit.updateQuantity(item.id, item.quantity + 1),
+          ),
+        ],
+      ),
     );
   }
 
@@ -908,12 +891,12 @@ class _CartViewState extends State<CartView> {
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: cubit.isAllSelected
-                                ? const Color(0xFF00B40F)
+                                ? const Color(0xFF26CD3A)
                                 : const Color(0xFFE0E0E0),
                             width: 2,
                           ),
                           color: cubit.isAllSelected
-                              ? const Color(0xFF00B40F)
+                              ? const Color(0xFF26CD3A)
                               : Colors.white,
                         ),
                         child: cubit.isAllSelected
@@ -931,44 +914,29 @@ class _CartViewState extends State<CartView> {
                           fontFamily: 'Roboto',
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1C1C1E),
+                          color: Color(0xFF1B5E20),
                         ),
                       ),
                     ],
                   ),
                 ),
                 
-                const SizedBox(width: 16),
-                
-                // Phần giữa: Miễn phí + Giá + Tiết kiệm
+                // Phần Tổng tiền và Vận chuyển
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Miễn phí + Giá
+                      // Tổng cộng
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.local_shipping_outlined,
-                            size: 16,
-                            color: Color(0xFF00B40F),
-                          ),
-                          const SizedBox(width: 4),
                           const Text(
-                            'Miễn phí',
+                            'Tổng cộng: ',
                             style: TextStyle(
                               fontFamily: 'Roboto',
-                              fontSize: 13,
-                              color: Color(0xFF00B40F),
-                            ),
-                          ),
-                          const Text(
-                            ' | ',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 13,
-                              color: Color(0xFF8E8E93),
+                              fontSize: 14,
+                              color: Color(0xFF1C1C1E),
                             ),
                           ),
                           Flexible(
@@ -976,22 +944,40 @@ class _CartViewState extends State<CartView> {
                               PriceFormatter.formatPrice(state.totalAmount),
                               style: const TextStyle(
                                 fontFamily: 'Roboto',
-                                fontSize: 15,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFFFF3B30),
+                                color: Color(0xFFE53935), // Red alert price
                               ),
                             ),
                           ),
-                          
-                          
                         ],
                       ),
-                      
+                      const SizedBox(height: 4),
+                      // Miễn phí vận chuyển
+                      const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_shipping_outlined,
+                            size: 14,
+                            color: Color(0xFF26CD3A),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Miễn phí vận chuyển',
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 12,
+                              color: Color(0xFF26CD3A),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 
                 // Nút Mua hàng
                 ElevatedButton(
@@ -1034,15 +1020,15 @@ class _CartViewState extends State<CartView> {
                           );
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00B40F),
+                    backgroundColor: const Color(0xFF26CD3A),
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: Colors.grey[300],
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 12,
+                      horizontal: 16,
+                      vertical: 14,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 0,
                   ),

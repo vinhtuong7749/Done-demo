@@ -116,6 +116,7 @@ class SellerHomeState extends Equatable {
         holdingDays: 0,
         paidAmount: 0,
       ),
+      isStoreOpen: true, // Thêm dòng này để mặc định Cửa hàng sẽ Open
       weeklyRevenue: {
         'T2': 0, 'T3': 0, 'T4': 0, 'T5': 0, 'T6': 0, 'T7': 0, 'CN': 0
       },

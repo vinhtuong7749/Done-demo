@@ -21,7 +21,8 @@ class _MenuScreenState extends State<MenuScreen>
   static const Color _accent = Color(0xFF16A34A);
   static const Color _accentDark = Color(0xFF166534);
 
-  static const List<String> _goals = [
+  // Được load từ API /health-goals khi khởi tạo
+  List<String> _goals = const [
     'Cân bằng',
     'Giảm cân',
     'Tăng cân',
@@ -39,10 +40,12 @@ class _MenuScreenState extends State<MenuScreen>
   ];
 
   final Set<String> _selectedNotes = <String>{};
+  final TextEditingController _allergyController = TextEditingController();
   List<SavedMenuCollection> _savedMenus = const [];
-  String _selectedGoal = _goals.first;
+  String _selectedGoal = 'Cân bằng';
   int _selectedDays = 3;
   bool _isLoading = false;
+  bool _isLoadingGoals = true;
 
   @override
   bool get wantKeepAlive => true;
@@ -51,6 +54,33 @@ class _MenuScreenState extends State<MenuScreen>
   void initState() {
     super.initState();
     _loadSavedMenus();
+    _loadHealthGoals();
+  }
+
+  Future<void> _loadHealthGoals() async {
+    try {
+      final goals = await _llmService.getHealthGoals();
+      if (!mounted) return;
+      setState(() {
+        _goals = goals;
+        // Đảm bảo selected goal hợp lệ
+        if (!goals.contains(_selectedGoal) && goals.isNotEmpty) {
+          _selectedGoal = goals.first;
+        }
+        _isLoadingGoals = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingGoals = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _allergyController.dispose();
+    super.dispose();
   }
 
   void _loadSavedMenus() {
@@ -66,11 +96,21 @@ class _MenuScreenState extends State<MenuScreen>
     });
 
     try {
+      final currentNotes = _selectedNotes.toList();
+      if (_allergyController.text.trim().isNotEmpty) {
+        currentNotes.add('Dị ứng: ${_allergyController.text.trim()}');
+      }
+
+      final allergenIngredients = _allergyController.text.trim().isNotEmpty
+          ? _allergyController.text.trim().split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+          : <String>[];
+
       final generated = await _llmService.generateMenu(
         days: _selectedDays,
         mealsPerDay: 3,
         healthGoal: _selectedGoal,
-        notes: _selectedNotes.toList(),
+        notes: currentNotes,
+        allergenIngredients: allergenIngredients,
       );
 
       final updatedMenus = [generated, ..._storage.getSavedMenuPlans()];
@@ -215,37 +255,48 @@ class _MenuScreenState extends State<MenuScreen>
             ),
           ),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedGoal,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
-              ),
-            ),
-            items: _goals
-                .map(
-                  (goal) =>
-                      DropdownMenuItem<String>(value: goal, child: Text(goal)),
+          _isLoadingGoals
+              ? const SizedBox(
+                  height: 52,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: _accent),
+                    ),
+                  ),
                 )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() {
-                _selectedGoal = value;
-              });
-            },
-          ),
+              : DropdownButtonFormField<String>(
+                  initialValue: _goals.contains(_selectedGoal) ? _selectedGoal : (_goals.isNotEmpty ? _goals.first : null),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                    ),
+                  ),
+                  items: _goals
+                      .map(
+                        (goal) =>
+                            DropdownMenuItem<String>(value: goal, child: Text(goal)),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _selectedGoal = value;
+                    });
+                  },
+                ),
           const SizedBox(height: 16),
           const Text(
             'Số ngày lên thực đơn',
@@ -301,6 +352,44 @@ class _MenuScreenState extends State<MenuScreen>
                 },
               );
             }).toList(),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Dị ứng (tùy chọn)',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _allergyController,
+            decoration: InputDecoration(
+              hintText: 'VD: đậu phộng, hải sản...',
+              hintStyle: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF9CA3AF),
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: _accent),
+              ),
+            ),
           ),
           const SizedBox(height: 16),
           Container(

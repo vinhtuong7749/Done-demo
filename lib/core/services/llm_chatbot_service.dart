@@ -50,6 +50,7 @@ class LlmChatbotService {
     int mealsPerDay = 3,
     required String healthGoal,
     List<String> notes = const [],
+    List<String> allergenIngredients = const [],
   }) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/menu/generate'),
@@ -59,6 +60,7 @@ class LlmChatbotService {
         'meals_per_day': mealsPerDay,
         'health_goal': healthGoal,
         'notes': notes,
+        'allergen_ingredients': allergenIngredients,
       }),
     );
 
@@ -72,6 +74,33 @@ class LlmChatbotService {
             .toString();
     throw Exception(errorMessage);
   }
+
+  Future<List<String>> getHealthGoals() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/health-goals'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final jsonData = _decodeResponse(response);
+        final goals = (jsonData['health_goals'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .toList();
+        return goals.isNotEmpty ? goals : _defaultHealthGoals;
+      }
+    } catch (e) {
+      debugPrint('❌ [LLM CHATBOT] getHealthGoals failed: $e');
+    }
+    return _defaultHealthGoals;
+  }
+
+  static const List<String> _defaultHealthGoals = [
+    'Cân bằng',
+    'Giảm cân',
+    'Tăng cân',
+    'Tăng cơ',
+    'Sức đề kháng',
+  ];
 
   Map<String, dynamic> _decodeResponse(http.Response response) {
     try {

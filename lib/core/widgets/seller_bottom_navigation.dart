@@ -1,142 +1,221 @@
 import 'package:flutter/material.dart';
 
-/// Seller Bottom Navigation Widget
-/// Dùng cho các màn hình của người bán
+/// Seller Bottom Navigation Widget - Modern Design with order badge
 class SellerBottomNavigation extends StatelessWidget {
   final int currentIndex;
   final Function(int)? onTap;
+  final int notificationCount;  // Giữ lại cho Tài khoản (nếu cần)
+  final int pendingOrderCount;  // Badge đỏ trên tab Đơn hàng
 
   const SellerBottomNavigation({
     super.key,
     required this.currentIndex,
     this.onTap,
+    this.notificationCount = 0,
+    this.pendingOrderCount = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90,
+      height: 75,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(
-            context,
-            iconAsset: 'assets/img/Vector.png',
-            label: 'Trang chủ',
-            index: 0,
-          ),
-          _buildNavItem(
-            context,
-            iconAsset: 'assets/img/product.png',
-            label: 'Sản phẩm',
-            index: 1,
-          ),
-          _buildNavItem(
-            context,
-            iconAsset: 'assets/img/order.png',
-            label: 'Đơn hàng',
-            index: 2,
-          ),
-          _buildNavItem(
-            context,
-            iconAsset: 'assets/img/doanhso.png',
-            label: 'Doanh số',
-            index: 3,
-          ),
-          _buildNavItem(
-            context,
-            iconAsset: 'assets/img/usser.png',
-            label: 'Tài khoản',
-            index: 4,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Center item (Avatar/Home)
-  Widget _buildCenterItem(BuildContext context) {
-    
-    
-    return InkWell(
-      onTap: () => {},
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Container(
-          width: 58,
-          height: 58,
-            child: Image.asset(
-              'assets/img/user_personas_presentation-26cd3a.png',
-              width: 58,
-              height: 58,
-              fit: BoxFit.cover,
+      child: SafeArea(
+        top: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(context,
+              icon: Icons.home_rounded,
+              outlineIcon: Icons.home_outlined,
+              label: 'Trang chủ',
+              index: 0,
             ),
-          
+            _buildNavItem(context,
+              icon: Icons.inventory_2_rounded,
+              outlineIcon: Icons.inventory_2_outlined,
+              label: 'Sản phẩm',
+              index: 1,
+            ),
+            // Tab Đơn hàng — có badge khi có đơn chờ xác nhận
+            _buildNavItemWithBadge(context,
+              icon: Icons.receipt_long_rounded,
+              outlineIcon: Icons.receipt_long_outlined,
+              label: 'Đơn hàng',
+              index: 2,
+              badgeCount: pendingOrderCount,
+              badgeColor: Colors.red,
+            ),
+            _buildNavItem(context,
+              icon: Icons.bar_chart_rounded,
+              outlineIcon: Icons.bar_chart_outlined,
+              label: 'Doanh số',
+              index: 3,
+            ),
+            _buildNavItemWithBadge(context,
+              icon: Icons.person_rounded,
+              outlineIcon: Icons.person_outline_rounded,
+              label: 'Tài khoản',
+              index: 4,
+              badgeCount: notificationCount,
+              badgeColor: Colors.red,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// Bottom Navigation Item
   Widget _buildNavItem(
     BuildContext context, {
-    required String iconAsset,
+    required IconData icon,
+    required IconData outlineIcon,
     required String label,
     required int index,
   }) {
     final isSelected = index == currentIndex;
-    
-    return InkWell(
-      onTap: () {
-        if (isSelected) return;
-        onTap?.call(index);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                isSelected ? const Color(0xFF00B40F) : Colors.black54,
-                BlendMode.srcIn,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (!isSelected) onTap?.call(index);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 0, vertical: 4),
+                decoration: isSelected
+                    ? BoxDecoration(
+                        color: const Color(0xFF26CD3A).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      )
+                    : null,
+                child: Icon(
+                  isSelected ? icon : outlineIcon,
+                  size: 26,
+                  color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF9CA3AF),
+                ),
               ),
-              child: Image.asset(
-                iconAsset,
-                width: 28,
-                height: 28,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.circle,
-                    size: 28,
-                    color: isSelected ? const Color(0xFF00B40F) : Colors.black54,
-                  );
-                },
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF9CA3AF),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                fontSize: 12,
-                height: 1.33,
-                color: isSelected ? const Color(0xFF00B40F) : Colors.black,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItemWithBadge(
+    BuildContext context, {
+    required IconData icon,
+    required IconData outlineIcon,
+    required String label,
+    required int index,
+    int badgeCount = 0,
+    Color badgeColor = Colors.red,
+  }) {
+    final isSelected = index == currentIndex;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (!isSelected) onTap?.call(index);
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.symmetric(horizontal: isSelected ? 16 : 0, vertical: 4),
+                    decoration: isSelected
+                        ? BoxDecoration(
+                            color: const Color(0xFF26CD3A).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          )
+                        : null,
+                    child: Icon(
+                      isSelected ? icon : outlineIcon,
+                      size: 26,
+                      color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF9CA3AF),
+                    ),
+                  ),
+                  // Badge số lượng
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -4,
+                      right: -6,
+                      child: AnimatedScale(
+                        scale: 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: badgeColor,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: badgeColor.withValues(alpha: 0.5),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                          child: Text(
+                            badgeCount > 99 ? '99+' : '$badgeCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 3),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF9CA3AF),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
